@@ -2,23 +2,16 @@
   'use strict';
 
   const API_BASE = "https://eagles-eye-api.onrender.com";
-  const API_STORAGE_KEY = 'eagles_eye_live_api_base_v2';
 
   function resolveApiBase() {
     try {
+      ['eagles_eye_api_base', 'eagles_eye_live_api_base', 'eagles_eye_live_api_base_v2'].forEach((k) =>
+        localStorage.removeItem(k)
+      );
       const params = new URLSearchParams(window.location.search);
       const fromQuery = params.get('api');
       if (fromQuery) {
-        const cleaned = fromQuery.replace(/\/+$/, '');
-        localStorage.setItem(API_STORAGE_KEY, cleaned);
-        return cleaned;
-      }
-      if (window.EAGLES_EYE_API_BASE) {
-        return String(window.EAGLES_EYE_API_BASE).replace(/\/+$/, '');
-      }
-      const saved = localStorage.getItem(API_STORAGE_KEY);
-      if (saved) {
-        return saved.replace(/\/+$/, '');
+        return fromQuery.replace(/\/+$/, '');
       }
     } catch (_) {
       // ignore storage errors
@@ -1009,7 +1002,7 @@
     const titleEl = document.getElementById('api-setting-title');
     const inputEl = document.getElementById('input-api-base');
     if (titleEl) titleEl.textContent = `Backend API (${state.apiBase})`;
-    if (inputEl && !inputEl.value) inputEl.value = state.apiBase;
+    if (inputEl) inputEl.value = state.apiBase;
     if (!pill) return;
 
     pill.textContent = 'Checking live API status...';
@@ -1144,11 +1137,6 @@
       state.apiBase = nextUrl;
       state.syncState = 'loading';
       refreshAllDashboardViews();
-      try {
-        localStorage.setItem(API_STORAGE_KEY, nextUrl);
-      } catch (_) {
-        // ignore
-      }
       await checkApiHealth();
       await fetchLiveScansFromBackend();
     });

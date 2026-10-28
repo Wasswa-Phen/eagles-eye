@@ -1,9 +1,9 @@
-const CACHE_NAME = 'eagles-eye-v7';
+const CACHE_NAME = 'eagles-eye-v8';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css',
-  './app.js',
+  './style.css?v=8',
+  './app.js?v=8',
   './manifest.json',
   './assets/logo.png'
 ];
