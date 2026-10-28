@@ -325,11 +325,11 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
   background: var(--green);
   margin-right: 5px;
 }
-.live.is-seed {
+.live.is-offline {
   color: #956000;
   background: var(--amber-soft);
 }
-.live.is-seed i {
+.live.is-offline i {
   background: var(--amber);
 }
 

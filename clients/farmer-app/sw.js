@@ -1,15 +1,11 @@
-const CACHE_NAME = 'eagles-eye-v5';
+const CACHE_NAME = 'eagles-eye-v6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
-  './mock_data.json',
-  './assets/logo.png',
-  './assets/cassava_mosaic.jpg',
-  './assets/banana_wilt.jpg',
-  './assets/healthy_maize.jpg'
+  './assets/logo.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -40,12 +36,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Never intercept cross-origin backend API calls (:8080/scans, :8080/, Cloud Run) or map tiles
-  if (
-    reqUrl.origin !== self.location.origin ||
-    reqUrl.pathname.endsWith('/diagnose') ||
-    reqUrl.pathname.endsWith('/scans')
-  ) {
+  // Never intercept cross-origin backend API calls or map tiles
+  if (reqUrl.origin !== self.location.origin) {
     return;
   }
 

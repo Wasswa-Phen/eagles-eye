@@ -269,9 +269,10 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
 .scan-photo {
   position: absolute;
   inset: 0;
-  background:
-    url('https://images.unsplash.com/photo-1744723491952-fc9e6f184fd1?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=80&w=900') center/cover,
-    url('assets/cassava_mosaic.jpg') center/cover;
+  background: radial-gradient(circle at 50% 42%, #1d4026 0%, #102516 68%, #09150d 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .scan-shade {
   position: absolute;
@@ -347,8 +348,23 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
   border-radius: 15px;
   font-size: 12px;
   font-weight: 700;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   box-shadow: 0 10px 26px #0004;
+}
+.toast-retry {
+  border: 0;
+  border-radius: 10px;
+  background: var(--red);
+  color: #fff;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .leaf-stage {
@@ -359,6 +375,11 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
   display: grid;
   place-items: center;
   padding: 16px 24px 48px;
+  cursor: pointer;
+  user-select: none;
+}
+.leaf-stage:active .leaf-frame {
+  transform: rotate(-8deg) scale(0.98);
 }
 .leaf-frame {
   width: min(250px, 60vw, 34dvh);
@@ -369,6 +390,7 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
   border-radius: 75% 20% 72% 22%;
   position: relative;
   transform: rotate(-8deg);
+  transition: transform .15s ease;
   box-shadow: 0 0 0 999px #07120a20, inset 0 0 25px #ffffff33;
   pointer-events: none;
 }
@@ -495,11 +517,12 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
 }
 .result-summary > div:last-child { min-width: 0; }
 .result-image {
+  width: 100%;
   height: clamp(86px, 26vw, 112px);
+  object-fit: cover;
+  display: block;
   border-radius: 15px;
-  background:
-    url('https://images.unsplash.com/photo-1744723491952-fc9e6f184fd1?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=80&w=500') center/cover,
-    url('assets/cassava_mosaic.jpg') center/cover;
+  background: #e8eee5;
 }
 .crop-label { font-size: 10px; letter-spacing: .12em; color: var(--green); font-weight: 800; text-transform: uppercase; }
 .result-summary h2 {
@@ -655,6 +678,17 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
 .alert-hero small { color: var(--red); font-weight: 800; letter-spacing: .1em; }
 .alert-hero h2 { font-size: clamp(18px, 5.4vw, 22px); line-height: 1.2; margin: 7px 0 0; }
 .alert-hero em { color: var(--red); font-style: normal; }
+.alert-hero.is-safe {
+  background: var(--green-soft);
+  border-color: #bddbbb;
+}
+.alert-hero.is-safe > span {
+  background: var(--green);
+}
+.alert-hero.is-safe small,
+.alert-hero.is-safe em {
+  color: var(--green-dark);
+}
 .mini-map {
   margin: 14px 0;
   height: clamp(210px, 33dvh, 265px);
@@ -669,6 +703,19 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
   height: 100%;
   position: relative;
   z-index: 2;
+}
+.nearby-map-status {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: #e9f0e4;
 }
 .nearby-map-label {
   background: #ffffffeb;
@@ -763,6 +810,19 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
   place-items: center;
   color: var(--green);
   background: var(--green-soft);
+  overflow: hidden;
+}
+.history-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.empty-history {
+  padding: 28px 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
 }
 .thumb-2, .thumb-moderate { color: #9b6700; background: var(--amber-soft); }
 .thumb-3, .thumb-high { color: var(--red); background: var(--red-soft); }

@@ -83,7 +83,7 @@
           </svg>
         </button>
         <strong id="txt-scan-header">Scan crop</strong>
-        <button class="icon-button" type="button" aria-label="Notifications" id="btn-scan-bell">
+        <button class="icon-button" type="button" aria-label="Nearby outbreak alerts" id="btn-scan-bell">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>
           </svg>
@@ -114,17 +114,20 @@
         </select>
       </div>
 
-      <div class="leaf-stage">
-        <div class="leaf-frame"><span id="txt-leaf-frame">Place leaf here</span></div>
+      <div class="leaf-stage" id="viewfinder-card" role="button" tabindex="0" aria-label="Tap to capture or select a crop leaf photo">
+        <div class="leaf-frame"><span id="txt-leaf-frame">Tap to capture leaf</span></div>
       </div>
 
-      <div class="scan-toast" id="scan-toast" role="alert" hidden></div>
+      <div class="scan-toast" id="scan-toast" role="alert" hidden>
+        <span id="scan-toast-msg"></span>
+        <button type="button" class="toast-retry" id="btn-retry-scan" hidden>Retry</button>
+      </div>
 
       <div class="loading-card" id="loading-card" hidden>
         <span class="spinner"></span>
         <div>
           <b id="txt-loading-title">Analysing your crop...</b>
-          <small id="txt-loading-sub">This may take a few seconds</small>
+          <small id="txt-loading-sub">Sending leaf photo to Eagles Eye AI...</small>
         </div>
       </div>
 
@@ -147,7 +150,7 @@
         <span class="action-spacer"></span>
       </div>
 
-      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/*" hidden>
+      <input type="file" id="camera-file-input" accept="image/*" capture="environment" style="display: none;">
     </section>
 
     <!-- SCREEN 3: RESULT -->
@@ -159,7 +162,7 @@
           </svg>
         </button>
         <strong id="txt-result-header">Your crop result</strong>
-        <button class="icon-button" type="button" aria-label="Notifications" id="btn-result-bell">
+        <button class="icon-button" type="button" aria-label="Nearby outbreak alerts" id="btn-result-bell">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>
           </svg>
@@ -168,15 +171,15 @@
 
       <main class="result-content">
         <div class="result-summary">
-          <div class="result-image" id="res-image" role="img" aria-label="Cassava leaf showing signs of mosaic disease"></div>
+          <img class="result-image" id="res-image" alt="Uploaded crop leaf">
           <div>
-            <span class="crop-label" id="res-crop">CASSAVA</span>
-            <h2 id="res-condition">Cassava mosaic disease</h2>
-            <span class="confidence">
+            <span class="crop-label" id="res-crop">—</span>
+            <h2 id="res-condition">—</h2>
+            <span class="confidence" id="res-confidence-badge">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m5 12 4 4L19 6"/>
               </svg>
-              <span id="res-confidence">High confidence</span>
+              <span id="res-confidence">—</span>
             </span>
           </div>
         </div>
@@ -184,37 +187,28 @@
         <div class="severity">
           <div>
             <b id="txt-severity-label">Severity</b>
-            <strong id="res-severity">Moderate</strong>
+            <strong id="res-severity">—</strong>
           </div>
           <div class="severity-track"><span id="res-severity-bar"></span></div>
-          <small id="res-severity-note">Act soon to protect the rest of your field.</small>
+          <small id="res-severity-note"></small>
         </div>
 
         <div class="section-heading">
           <div>
-            <span id="txt-steps-kicker">3 simple steps</span>
+            <span id="txt-steps-kicker">Recommended action</span>
             <h3 id="txt-steps-heading">What to do now</h3>
           </div>
-          <span class="step-count" id="res-step-count">1–3</span>
+          <span class="step-count" id="res-step-count">1–1</span>
         </div>
 
-        <div class="checklist" id="res-checklist">
-          <div class="check-item">
-            <span class="check-number">1</span>
-            <div><b>Remove affected leaves</b><p>Cut and safely bury badly affected leaves.</p></div>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
-          </div>
-          <div class="check-item">
-            <span class="check-number">2</span>
-            <div><b>Use clean planting material</b><p>Do not replant stems from sick crops.</p></div>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
-          </div>
-          <div class="check-item">
-            <span class="check-number">3</span>
-            <div><b>Control whiteflies</b><p>Ask for an approved treatment at your agro-dealer.</p></div>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
-          </div>
-        </div>
+        <div class="checklist" id="res-checklist"></div>
+
+        <button type="button" class="button button--primary full" id="btn-retake" hidden>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14.5 5 13 3h-2L9.5 5H4a2 2 0 0 0-2 2v11h20V7a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="4"/>
+          </svg>
+          <span id="txt-btn-retake">Retake clearer photo</span>
+        </button>
 
         <button type="button" class="button button--primary full" id="btn-listen">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -258,7 +252,7 @@
           </svg>
         </button>
         <strong id="txt-nearby-header">Nearby alert</strong>
-        <button class="icon-button" type="button" aria-label="Notifications" id="btn-nearby-bell">
+        <button class="icon-button" type="button" aria-label="Refresh live outbreak alerts" id="btn-nearby-bell">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>
           </svg>
@@ -266,7 +260,7 @@
       </header>
 
       <main class="alert-content">
-        <div class="alert-hero">
+        <div class="alert-hero" id="alert-hero">
           <span>
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>
@@ -274,33 +268,24 @@
           </span>
           <div>
             <small id="txt-near-farm">NEAR YOUR FARM</small>
-            <h2 id="txt-alert-headline">Fall armyworm confirmed <em>8 km</em> from you</h2>
+            <h2 id="txt-alert-headline">Checking live outbreak reports...</h2>
           </div>
         </div>
 
         <div class="mini-map" id="nearby-mini-map-box">
           <div id="nearby-real-map" class="nearby-real-map" aria-label="Real Uganda map showing nearby outbreak"></div>
-          <svg id="nearby-offline-svg" viewBox="0 0 350 245" aria-label="Map showing nearby outbreak">
-            <path class="road" d="M-10 180C80 130 110 180 185 105S300 35 370 70"/>
-            <path class="road minor" d="M45-10c25 80 5 150 80 270M270-10c-30 100-5 180 45 260"/>
-            <circle class="outbreak-ring" cx="240" cy="95" r="42"/>
-            <circle class="outbreak" cx="240" cy="95" r="9"/>
-            <circle class="you" cx="142" cy="165" r="9"/>
-            <text x="155" y="171" id="txt-map-you">Your farm</text>
-            <text x="255" y="90" id="txt-map-pest">Armyworm</text>
-            <text x="255" y="106" id="txt-map-dist">8 km away</text>
-          </svg>
+          <div class="nearby-map-status" id="nearby-map-status" hidden></div>
         </div>
 
         <div class="alert-card">
-          <h3 id="txt-alert-card-title">Protect your maize now</h3>
-          <p id="txt-alert-card-desc">Check the funnel of young maize plants for holes, sawdust-like waste, or caterpillars.</p>
+          <h3 id="txt-alert-card-title">Live regional surveillance</h3>
+          <p id="txt-alert-card-desc">Loading recent confirmed crop scans from the Eagles Eye database...</p>
           <button type="button" class="button button--primary full" id="btn-prevention-tips">
             <span id="txt-btn-tips">See prevention tips</span>
           </button>
         </div>
 
-        <p class="updated" id="txt-updated"><span></span> Updated today at 8:30 AM</p>
+        <p class="updated" id="txt-updated"><span></span> Syncing with live database...</p>
       </main>
     </section>
 
@@ -313,7 +298,7 @@
           </svg>
         </button>
         <strong id="txt-history-header">Scan history</strong>
-        <button class="icon-button" type="button" aria-label="Notifications" id="btn-history-bell">
+        <button class="icon-button" type="button" aria-label="Nearby outbreak alerts" id="btn-history-bell">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>
           </svg>
@@ -326,7 +311,7 @@
             <span id="txt-farm-record">YOUR FARM RECORD</span>
             <h2 id="txt-past-scans">Past scans</h2>
           </div>
-          <b id="history-count">4</b>
+          <b id="history-count">0</b>
         </div>
 
         <div class="history-list" id="history-list"></div>
@@ -352,12 +337,6 @@
           <span id="txt-district-label">Your district</span>
           <select id="select-district" aria-label="Select district">
             <option value="Masaka" selected>Masaka</option>
-            <option value="Mukono">Mukono</option>
-            <option value="Mbale">Mbale</option>
-            <option value="Mbarara">Mbarara</option>
-            <option value="Gulu">Gulu</option>
-            <option value="Wakiso">Wakiso</option>
-            <option value="Iganga">Iganga</option>
           </select>
         </div>
         <div class="dealer-list" id="dealers-list"></div>
@@ -372,7 +351,7 @@
       <div class="sheet-panel">
         <div class="sheet-handle"></div>
         <div class="sheet-header">
-          <h3 id="sheet-tips-title">Fall armyworm prevention</h3>
+          <h3 id="sheet-tips-title">Crop protection guidance</h3>
           <button type="button" class="sheet-close" id="btn-close-tips" aria-label="Close">✕</button>
         </div>
         <div class="checklist" id="tips-checklist"></div>

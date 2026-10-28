@@ -67,7 +67,7 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>
             </svg>
-            <i id="notif-dot"></i>
+            <i id="notif-dot" hidden></i>
           </button>
 
           <button type="button" class="button button--primary" id="btn-download">
@@ -93,8 +93,8 @@
             </svg>
           </div>
           <span>Scans this week</span>
-          <b id="stat-scans">2,847</b>
-          <small class="positive" id="stat-scans-sub">+12.4%</small>
+          <b id="stat-scans">—</b>
+          <small class="positive" id="stat-scans-sub">Syncing live API...</small>
         </article>
 
         <article class="stat">
@@ -104,8 +104,8 @@
             </svg>
           </div>
           <span>Active outbreaks</span>
-          <b id="stat-outbreaks">12</b>
-          <small class="positive" id="stat-outbreaks-sub">+3 this week</small>
+          <b id="stat-outbreaks">—</b>
+          <small class="positive" id="stat-outbreaks-sub">Syncing live API...</small>
         </article>
 
         <article class="stat">
@@ -115,7 +115,7 @@
             </svg>
           </div>
           <span>Districts affected</span>
-          <b id="stat-districts">18</b>
+          <b id="stat-districts">—</b>
           <small id="stat-districts-sub">of 146 districts</small>
         </article>
 
@@ -126,8 +126,8 @@
             </svg>
           </div>
           <span>Most common disease</span>
-          <b id="stat-disease">Cassava mosaic</b>
-          <small id="stat-disease-sub">38% of diagnoses</small>
+          <b id="stat-disease">—</b>
+          <small id="stat-disease-sub">Syncing live API...</small>
         </article>
       </section>
 
@@ -139,7 +139,7 @@
               <h2>Outbreak map</h2>
               <p id="map-period-subtitle">Confirmed cases by district · Last 30 days</p>
             </div>
-            <span class="live" id="live-indicator"><i></i> Live data</span>
+            <span class="live is-offline" id="live-indicator"><i></i> Connecting...</span>
           </div>
 
           <div class="uganda-map" id="uganda-map-wrapper">
@@ -169,10 +169,7 @@
           </div>
 
           <ol id="threat-list">
-            <li><b>1</b><div><strong>Cassava mosaic</strong><span>Cassava · 486 scans</span></div><em class="up">↑ 18%</em></li>
-            <li><b>2</b><div><strong>Fall armyworm</strong><span>Maize · 321 scans</span></div><em class="up">↑ 12%</em></li>
-            <li><b>3</b><div><strong>Banana wilt</strong><span>Banana · 197 scans</span></div><em class="down">↓ 4%</em></li>
-            <li><b>4</b><div><strong>Coffee leaf rust</strong><span>Coffee · 145 scans</span></div><em>→ 0%</em></li>
+            <li><b>…</b><div><strong>Syncing live database...</strong><span>Fetching confirmed scans from Eagles Eye API</span></div><em>—</em></li>
           </ol>
 
           <button type="button" class="view-all" id="btn-view-all">
@@ -223,9 +220,9 @@
           </div>
           <div class="setting-box">
             <h3 id="api-setting-title">Backend API</h3>
-            <p id="api-health-desc">Connects to Flask + Gemini + Firestore `/scans` endpoint with offline `seed_data.json` fallback.</p>
+            <p id="api-health-desc">Connects directly to the live Eagles Eye API (Flask + Gemini 2.5 Flash + Google Cloud Firestore) on Render.</p>
             <div class="api-url-form">
-              <input type="url" id="input-api-base" aria-label="Backend API URL" placeholder="http://localhost:8080">
+              <input type="url" id="input-api-base" aria-label="Backend API URL" placeholder="https://eagles-eye-t8td.onrender.com" value="https://eagles-eye-t8td.onrender.com">
               <button type="button" class="btn-sync-live" id="btn-save-api">Connect</button>
             </div>
             <span class="api-status" id="api-health-pill">Checking status...</span>

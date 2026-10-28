@@ -57,9 +57,9 @@ flowchart LR
 
 | Layer | Files | Key Responsibilities |
 |---|---|---|
-| **Farmer Mobile PWA** | `clients/farmer-app/{index.html,style.css,app.js,manifest.json,sw.js}` | 5-screen mobile flow, `<canvas>` photo compression (`<= 1600px` JPEG), bilingual English/Luganda UI & Web Speech TTS, 54-district agro-dealer lookup, Haversine nearby outbreak map, offline PWA shell. |
-| **Officer Surveillance Dashboard** | `clients/dashboard/{index.html,style.css,script.js,seed_data.json}` | Live 4-KPI calculation, interactive Uganda district heat map, ranked Top Threats with crop/disease/period filters, district-filtered field reports, 15s live background polling, CSV export. |
-| **Backend API & AI Engine** | `backend/{app.py,db.py,districts.py,seed_firestore.py,Dockerfile}` | Multipart upload validation, structured JSON Gemini multimodal inference, inconclusive-image filtering (`confidence <= 0.40`), anonymous district geotagging, Firestore + in-memory persistence. |
+| **Farmer Mobile PWA** | `clients/farmer-app/{index.html,style.css,app.js,manifest.json,sw.js}` | 5-screen mobile flow, hardware camera/file-picker (`#camera-file-input`) with `FileReader` live preview & actual photo thumbnail on Results, live `POST https://eagles-eye-t8td.onrender.com/diagnose`, bilingual English/Luganda UI & Web Speech TTS, 54-district agro-dealer lookup, live Haversine nearby outbreak map (`GET /scans?limit=50`). |
+| **Officer Surveillance Dashboard** | `clients/dashboard/{index.html,style.css,script.js}` | Live 4-KPI calculation from `https://eagles-eye-t8td.onrender.com` & Firestore (zero mock/seed fallbacks), interactive Uganda district heat map, ranked Top Threats with crop/disease/period filters, district-filtered field reports, 20s live background polling, CSV export. |
+| **Backend API & AI Engine** | `backend/{app.py,db.py,districts.py,seed_firestore.py,Dockerfile}` | Multipart upload validation, structured JSON Gemini multimodal inference, inconclusive-image filtering (`confidence <= 0.40`), anonymous district geotagging, Google Cloud Firestore persistence. |
 | **Evaluation & Contracts** | `docs/DATA_CONTRACT.md`, `tests/{run_ai_tests.py,labels.csv}` | Single-source JSON contract and automated 15-image Gemini accuracy & health-status evaluation harness. |
 
 ---
@@ -74,43 +74,45 @@ stateDiagram-v2
     Welcome --> Scan : Tap Start (EN / LG selected)
     Welcome --> History : View scan history
 
-    Scan --> Analysing : Capture shutter or select Gallery photo
-    Analysing --> Result : 200 OK (success) or Offline Fallback
-    Analysing --> RetakeToast : 400 / 413 Validation Error
-    RetakeToast --> Scan : Choose clearer / valid image
+    Scan --> Analysing : Tap Viewfinder / Shutter / Gallery -> FileReader preview
+    Analysing --> Result : 200 OK (status === success, actual user photo displayed)
+    Analysing --> Result : 200 OK (status === inconclusive or confidence <= 0.40 -> Retake button)
+    Analysing --> RetryToast : Network / HTTP Validation Error
+    RetryToast --> Scan : Retry or capture clearer leaf
+    Result --> Scan : Tap Retake clearer photo
 
     Result --> AudioTTS : Listen to advice (EN / Luganda)
     Result --> AgroDealersSheet : Find nearest agro-dealer (54 districts)
-    Result --> NearbyAlert : View nearby crop alert
+    Result --> NearbyAlert : View nearby crop alert / Bell (GET /scans?limit=50)
 
     AgroDealersSheet --> NearbyAlert : View nearby crop alert
     NearbyAlert --> PreventionTipsSheet : See prevention tips
-    History --> Result : Open saved scan record
-    History --> Scan : Scan another crop
+    History --> Result : Open saved real scan record
+    History --> Scan : Scan a crop leaf
 ```
 
 ### 3.2 Extension Officer Surveillance Journey (`clients/dashboard/`)
 
 ```mermaid
 flowchart TD
-    Open(["Launch Officer Dashboard"]) --> Sync["Fetch GET / & GET /scans?limit=200"]
-    Sync --> Check{"Backend Status"}
+    Open(["Launch Officer Dashboard"]) --> Sync["Fetch GET / & GET /scans?limit=200 from https://eagles-eye-t8td.onrender.com"]
+    Sync --> Check{"Live Backend Status"}
 
-    Check -->|"Online + Scans >= 1"| LiveMetrics["Compute Live KPIs, District Hotspots & Ranked Threats"]
-    Check -->|"Online + 0 Scans"| ReadyState["Show 'Live API · Ready' Badge + Baseline Map Preview"]
-    Check -->|"Offline"| SeedState["Show 'Seed data (offline)' Badge + seed_data.json"]
+    Check -->|"Online + Scans >= 1"| LiveMetrics["Compute Live Firestore KPIs, District Hotspots & Ranked Threats"]
+    Check -->|"Online + 0 Scans"| ReadyState["Show 'Live API · 0 scans' + Clean Empty Surveillance State"]
+    Check -->|"Unreachable"| OfflineState["Show 'API unreachable' Notice + Sync Live API Retry"]
 
     LiveMetrics --> Nav{"Navigation Mode"}
     ReadyState --> Nav
-    SeedState --> Nav
+    OfflineState --> Nav
 
     Nav -->|"Overview"| SplitView["4 KPI Cards + Interactive Uganda Heat Map + Top Threats"]
     Nav -->|"Outbreak map"| ExpandedMap["Full-Width Uganda District Map + Popups"]
     Nav -->|"Reports"| ReportTable["Filterable Field Reports + Server ?district= Query"]
     Nav -->|"Settings"| Config["API Base URL Switcher + Live Health Check"]
 
-    SplitView -->|"15s Poll New Scan ID"| AlertDot["Illuminate Notification Bell + Recent District Alerts"]
-    SplitView -->|"Download report"| ExportCSV["Generate eagles-eye-outbreak-report.csv"]
+    SplitView -->|"20s Poll New Scan ID"| AlertDot["Illuminate Notification Bell + Recent District Alerts"]
+    SplitView -->|"Download report"| ExportCSV["Generate eagles-eye-live-outbreak-report.csv"]
 ```
 
 ---
@@ -127,12 +129,12 @@ flowchart TD
 - **Farmer Mobile App (`clients/farmer-app/style.css`):**
   - Refactored `#screen-scan` into a zero-overlap flex-column layout with `.leaf-stage`, proportional `min(250px, 60vw, 34dvh)` leaf framing, `320px`-safe 3-column grid headers, `env(safe-area-inset-*)` padding, and a dedicated two-column **landscape phone mode** (`@media (max-height: 540px) and (orientation: landscape)`).
 
-### 4.3 Full Frontend ↔ Backend Integration
-- **Smart Endpoint Discovery (`resolveApiBase`):** Supports `?api=<cloud-run-url>` query overrides, `localStorage` persistence, automatic LAN IP resolution (`http://<lan-ip>:8080` for mobile testing over Wi-Fi), and `http://localhost:8080`.
-- **54-District Synchronization:** Unified all 54 Ugandan district coordinates across `backend/districts.py`, `clients/farmer-app/app.js`, and `clients/dashboard/script.js`.
-- **Low-Data Image Normalization:** Client-side `<canvas>` resizing/JPEG encoding ensures 8–12 MB smartphone camera photos upload swiftly under the backend's 5 MB cap.
-- **Contract-Exact Inconclusive Handling:** Blurry or non-crop photos (`"status": "inconclusive"` or `confidence <= 0.40`) render a dedicated amber `"Unclear photo"` retake prompt rather than misclassifying `severity: "none"` as healthy foliage, and are excluded from outbreak history.
-- **Live Surveillance Aggregation & 15s Polling:** Connected the Dashboard KPI strip, Uganda heat map, Top Threats ranking, Notification bell, CSV export, and `?district=` report filter directly to `GET /scans`, plus connected the Farmer App's Nearby Alert screen to real Haversine outbreak distances from `GET /scans`.
+### 4.3 Live Production Frontend ↔ Render Backend & Firestore Integration (Zero Mock Fallbacks)
+- **Direct Live Render Connection (`https://eagles-eye-t8td.onrender.com`):** Removed all static demo data (`mock_data.json`, `seed_data.json`, static placeholder crop imagery, and preset demo chips) so both the Farmer PWA and Surveillance Dashboard operate strictly on real user uploads and live Firestore records.
+- **Hardware Camera & FileReader Pipeline:** Tapping `#viewfinder-card`, `#btn-capture`, or `#btn-gallery` triggers `#camera-file-input`, previews the user's exact photo via `FileReader` (`readAsDataURL`) inside `#scan-photo`, retains the data URL in memory to display the farmer's actual photo thumbnail in `#res-image`, and compresses oversized images (`< 4.8 MB`) via `<canvas>` before `POST /diagnose`.
+- **54-District Synchronization & Real Haversine Alerts:** Unified all 54 Ugandan district coordinates across `backend/districts.py`, `clients/farmer-app/app.js`, and `clients/dashboard/script.js`. Opening Nearby Crop Alert or tapping any notification bell queries `GET https://eagles-eye-t8td.onrender.com/scans?limit=50` and computes real Haversine distances (`km`) from the farmer's selected district.
+- **Contract-Exact Inconclusive Handling:** Blurry or non-crop photos (`status === "inconclusive"` or `confidence <= 0.40`) surface an amber `"Needs clearer photo"` badge and primary `"Retake clearer photo"` button (`#btn-retake`) without polluting outbreak history.
+- **Live Surveillance Aggregation & 20s Polling:** Connected the Dashboard KPI strip, Uganda heat map, Top Threats ranking, Notification bell, CSV export, and `?district=` report filter exclusively to live `GET /scans?limit=200` with cold-start-tolerant timeouts (`45s`).
 
 ---
 

@@ -1,41 +1,8 @@
 (function () {
   'use strict';
 
-  function resolveApiBase() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const fromQuery = params.get('api');
-      if (fromQuery) {
-        const cleaned = fromQuery.replace(/\/+$/, '');
-        localStorage.setItem('eagles_eye_api_base', cleaned);
-        return cleaned;
-      }
-      if (window.EAGLES_EYE_API_BASE) {
-        return String(window.EAGLES_EYE_API_BASE).replace(/\/+$/, '');
-      }
-      const saved = localStorage.getItem('eagles_eye_api_base');
-      if (saved) {
-        return saved.replace(/\/+$/, '');
-      }
-    } catch (_) {
-      // ignore storage/URL errors
-    }
-
-    const host = window.location.hostname;
-    if (
-      host &&
-      (host === 'localhost' ||
-        host === '127.0.0.1' ||
-        /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host))
-    ) {
-      const proto = window.location.protocol === 'https:' ? 'https:' : 'http:';
-      return `${proto}//${host}:8080`;
-    }
-    return 'http://localhost:8080';
-  }
-
-  const API_BASE = resolveApiBase();
-  const STORAGE_KEY = 'eagles_eye_scans_v2';
+  const API_BASE = "https://eagles-eye-t8td.onrender.com";
+  const STORAGE_KEY = 'eagles_eye_real_scans_v1';
   const DISTRICT_STORAGE_KEY = 'eagles_eye_district';
 
   const SVG_ICONS = {
@@ -44,8 +11,6 @@
     arrow: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
     check: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>'
   };
-
-  const DEFAULT_RESULT_PHOTO = "https://images.unsplash.com/photo-1744723491952-fc9e6f184fd1?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=80&w=500";
 
   const I18N = {
     en: {
@@ -58,16 +23,19 @@
       scanHeader: 'Scan crop',
       scanInstruction: 'Take a clear photo of<br><b>the sick leaf</b>',
       cropAuto: 'Auto-detect crop',
-      leafFrame: 'Place leaf here',
+      leafFrame: 'Tap to capture leaf',
+      leafReady: 'Tap to change photo',
       loadingTitle: 'Analysing your crop...',
-      loadingSub: 'Connecting to Eagles Eye AI...',
+      loadingSub: 'Sending leaf photo to Eagles Eye AI...',
       gallery: 'Gallery',
+      retry: 'Retry',
       resultHeader: 'Your crop result',
       highConfidence: 'High confidence',
       moderateConfidence: 'Moderate confidence',
       lowConfidence: 'Needs clearer photo',
+      retakeBtn: 'Retake clearer photo',
       severityLabel: 'Severity',
-      stepsKicker: '3 simple steps',
+      stepsKicker: 'Recommended action',
       stepsHeading: 'What to do now',
       listenAdvice: 'Listen to advice',
       stopListening: 'Stop audio',
@@ -76,23 +44,26 @@
       advisory: 'Advisory only. Confirm with your extension officer.',
       nearbyHeader: 'Nearby alert',
       nearFarm: 'NEAR YOUR FARM',
-      alertHeadline: 'Fall armyworm confirmed <em>8 km</em> from you',
+      checkingAlerts: 'Checking live outbreak reports...',
+      noOutbreaksHeadline: 'No active outbreaks reported near <em>{district}</em>',
+      noOutbreaksTitle: 'Continue regular crop scouting',
+      noOutbreaksDesc: 'No disease outbreaks have been logged in the live database near your district yet. Inspect your crops weekly and scan any suspicious leaf early.',
+      alertErrorHeadline: 'Could not reach live outbreak server',
+      alertErrorDesc: 'Check your internet connection and tap the bell icon above to refresh live outbreak distances.',
       mapYou: 'Your farm',
-      mapPest: 'Armyworm',
-      mapDist: '8 km away',
-      alertCardTitle: 'Protect your maize now',
-      alertCardDesc: 'Check the funnel of young maize plants for holes, sawdust-like waste, or caterpillars.',
       btnTips: 'See prevention tips',
-      updated: 'Updated today at 8:30 AM',
+      syncingDb: 'Syncing with live database...',
       historyHeader: 'Scan history',
       farmRecord: 'YOUR FARM RECORD',
       pastScans: 'Past scans',
-      scanAnother: 'Scan another crop',
+      emptyHistory: 'No crop scans yet. Capture or upload a real leaf photo to diagnose your crop.',
+      scanAnother: 'Scan a crop leaf',
       dealersTitle: 'Nearest agro-dealers',
       districtLabel: 'Your district',
-      tipsTitle: 'Fall armyworm prevention',
+      tipsTitle: 'Crop protection guidance',
       gotIt: 'Got it',
-      callLabel: 'Call'
+      callLabel: 'Call',
+      networkError: 'Could not connect to Eagles Eye AI server. Please check your connection and retry.'
     },
     lg: {
       eyebrow: 'Okubuulirira okwesigika',
@@ -104,16 +75,19 @@
       scanHeader: 'Kebera ekirime',
       scanInstruction: "Kuba ekifanyi ekirungi<br><b>eky'ekikoola ekirwadde</b>",
       cropAuto: 'Zuula ekirime kyokka',
-      leafFrame: 'Teeka wano ekikoola',
+      leafFrame: 'Nyiga wano okukuba ekifanyi',
+      leafReady: 'Nyiga okukyusa ekifanyi',
       loadingTitle: 'Tukebera ekirime kyo...',
-      loadingSub: 'Kino kitwala sikonda ntono',
+      loadingSub: 'Tuweereza ekifanyi ku Eagles Eye AI...',
       gallery: 'Ebifanyi',
+      retry: 'Ddamu',
       resultHeader: 'Ebyazuuliddwa',
       highConfidence: 'Obukakafu obw’amaanyi',
       moderateConfidence: 'Obukakafu bwa wakati',
       lowConfidence: 'Ekifanyi kyeetaaga okutangaala',
+      retakeBtn: 'Kuba ekifanyi ekirala ekirungi',
       severityLabel: 'Obukambwe',
-      stepsKicker: 'Amatendera 3 amangu',
+      stepsKicker: 'Amagezi ag’okukola',
       stepsHeading: 'Kiki eky’okukola kati',
       listenAdvice: 'Wuliriza amagezi',
       stopListening: 'Yimiriza eddoboozi',
@@ -122,27 +96,30 @@
       advisory: 'Kino kya kubuulirira kwokka. Kakasa n’omukugu w’ebyobulimi.',
       nearbyHeader: 'Okulabula okumpi',
       nearFarm: 'OKUMPI N’ENNIMIRO YO',
-      alertHeadline: 'Fall armyworm azuuliddwa <em>8 km</em> okuva w’oli',
+      checkingAlerts: 'Tukebera alipoota z’obulwadde...',
+      noOutbreaksHeadline: 'Tewali bulwadde buzuuliddwa kumpi ne <em>{district}</em>',
+      noOutbreaksTitle: 'Weeyongere okukebera ennimiro yo',
+      noOutbreaksDesc: 'Tewali alipoota za bulwadde bw’ebirime mu kitundu kyo kati. Kebera ebirime byo buli wiiki.',
+      alertErrorHeadline: 'Tetwasobodde kutuuka ku server',
+      alertErrorDesc: 'Kebera yintaneeti yo onyige akade waggulu okuddamu okukebera.',
       mapYou: 'Ennimiro yo',
-      mapPest: 'Armyworm',
-      mapDist: '8 km okuva wano',
-      alertCardTitle: 'Kuuma kasooli wo kati',
-      alertCardDesc: 'Kebera mu mutwe gwa kasooli omuto okulaba ebituli, obusa bw’ebiwuka, oba obunnyo.',
       btnTips: 'Laba amagezi ag’okuziyiza',
-      updated: 'Kyatereezeddwa leero ku 8:30 AM',
+      syncingDb: 'Tukwatagana ne database...',
       historyHeader: 'Ebyakeberebwa',
       farmRecord: 'EBYAFAAYO BY’ENNIMIRO YO',
       pastScans: 'Ebyakeberebwa',
-      scanAnother: 'Kebera ekirime ekirala',
+      emptyHistory: 'Tonnaba kukebera kirime kyonna. Kuba ekifanyi ky’ekikoola otandike.',
+      scanAnother: 'Kebera ekikoola',
       dealersTitle: 'Amaduuka g’ebyobulimi agali okumpi',
       districtLabel: 'Disitulikiti yo',
-      tipsTitle: 'Okuziyiza Fall armyworm',
+      tipsTitle: 'Amagezi ag’okukuuma ebirime',
       gotIt: 'Ntegedde',
-      callLabel: 'Kuba'
+      callLabel: 'Kuba',
+      networkError: 'Tetwasobodde kutuuka ku Eagles Eye AI. Kebera yintaneeti yo oddemu.'
     }
   };
 
-  // All 54 Ugandan districts matching backend/districts.py
+  // Exact 54 Ugandan districts & WGS84 coordinates from backend/districts.py
   const DISTRICT_COORDS = {
     Adjumani: { lat: 3.3760, lng: 31.7900 },
     Apac: { lat: 1.9760, lng: 32.5390 },
@@ -200,106 +177,6 @@
     Wakiso: { lat: 0.4044, lng: 32.4594 }
   };
 
-  const CATALOG = {
-    cassava: {
-      crop: 'Cassava',
-      condition: 'Cassava mosaic disease',
-      condition_lg: 'Obulwadde bwa Cassava mosaic',
-      confidence: 0.94,
-      severity: 'moderate',
-      is_healthy: false,
-      is_inconclusive: false,
-      image: DEFAULT_RESULT_PHOTO,
-      fallbackImage: 'assets/cassava_mosaic.jpg',
-      advice: 'Cut and safely bury badly affected leaves. Do not replant stems from sick crops. Ask for an approved whitefly treatment at your agro-dealer.',
-      advice_luganda: 'Sala era oziike amakoola agalwadde ennyo. Tosimba biti biva ku birime ebirwadde. Saba eddagala erikakasiddwa ku dduuka ly’ebyobulimi.',
-      steps: [
-        ['Remove affected leaves', 'Cut and safely bury badly affected leaves.', 'Ggyako amakoola amalwadde', 'Sala era oziike amakoola agalwadde ennyo.'],
-        ['Use clean planting material', 'Do not replant stems from sick crops.', 'Kozesa ebiti ebiramu', 'Tosimba biti biva ku birime ebirwadde.'],
-        ['Control whiteflies', 'Ask for an approved treatment at your agro-dealer.', 'Ziyiza obuwuka obweru', 'Saba eddagala erikakasiddwa ku dduuka ly’ebyobulimi.']
-      ]
-    },
-    maize: {
-      crop: 'Maize',
-      condition: 'Healthy crop',
-      condition_lg: 'Kasooli mulamu bulungi',
-      confidence: 0.98,
-      severity: 'healthy',
-      is_healthy: true,
-      is_inconclusive: false,
-      image: 'assets/healthy_maize.jpg',
-      fallbackImage: 'assets/healthy_maize.jpg',
-      advice: 'Crop foliage looks healthy with no pest damage. Keep weeding regularly and scout weekly for early signs of Fall armyworm.',
-      advice_luganda: 'Amakoola ga kasooli malamu bulungi. Weeyongere okukoola mu budde era okebere buli wiiki okulaba obubonero bwa Armyworm.',
-      steps: [
-        ['Keep weeding regularly', 'Maintain a clean field during early growth stages.', 'Koola mu budde', 'Kuuma ennimiro nga nnyonjo mu biseera eby’okukula.'],
-        ['Balanced nutrition', 'Apply organic manure or recommended top-dressing at knee height.', 'Teekamu ebigimusa', 'Teekamu obusa oba ebigimusa kasooli lw’atuuka mu maviivi.'],
-        ['Scout weekly', 'Inspect central funnels every week for caterpillars.', 'Kebera buli wiiki', 'Kebera mu mutwe gwa kasooli buli wiiki.']
-      ]
-    },
-    banana: {
-      crop: 'Banana',
-      condition: 'Black sigatoka',
-      condition_lg: 'Obulwadde bwa Black sigatoka',
-      confidence: 0.91,
-      severity: 'moderate',
-      is_healthy: false,
-      is_inconclusive: false,
-      image: 'assets/banana_wilt.jpg',
-      fallbackImage: 'assets/banana_wilt.jpg',
-      advice: 'Prune streaked or drying lower leaves and burn or bury them away from the mat. Improve spacing and drainage to reduce leaf moisture.',
-      advice_luganda: 'Salako endagala ezikaze wansi oziike wala n’ensuku. Gaziya amabanga g’ebitooke empewo eyingire bulungi.',
-      steps: [
-        ['Prune affected lower leaves', 'Cut streaked leaves early and remove them from the garden.', 'Salako endagala endwadde', 'Salako endagala eziriko amabala oziggye mu lusuku.'],
-        ['Sterilize cutting tools', 'Disinfect knives and pangas with Jik bleach or flame.', 'Yosa ebiwabyo', 'Yosa akambe n’ekiwabyo mu Jik oba mu muliro.'],
-        ['Improve airflow & mulch', 'De-sucker excess shoots and apply clean mulch.', 'Yingiza empewo mu lusuku', 'Ggyamu ensukusa ezisusse obungi obikke bulungi.']
-      ]
-    },
-    banana_wilt: {
-      crop: 'Banana / Matooke',
-      condition: 'Banana bacterial wilt',
-      condition_lg: 'Kiijukizo ky’ebitooke (BXW)',
-      confidence: 0.95,
-      severity: 'high',
-      is_healthy: false,
-      is_inconclusive: false,
-      image: 'assets/banana_wilt.jpg',
-      fallbackImage: 'assets/banana_wilt.jpg',
-      advice: 'Cut down the infected plant at ground level and bury residues immediately. Disinfect all farming tools with fire or bleach and break male buds with a forked stick.',
-      advice_luganda: 'Temako ekitooke ekirwadde wansi ku ttaka era oziike ebisigalira. Yosa ebyuma mu muliro oba Jik era oggyeko empummumpu n’akakondo.',
-      steps: [
-        ['Uproot or cut at soil level', 'Remove infected stems immediately and bury them.', 'Temera ku ttaka', 'Temako ekitooke ekirwadde ku ttaka oziike ebisigalira.'],
-        ['Disinfect tools thoroughly', 'Clean pangas with fire or household bleach between plants.', 'Yosa ebiwabyo', 'Yosa ebiwabyo mu muliro oba mu Jik buli lw’osala.'],
-        ['Remove male buds early', 'Use a wooden forked stick once the last hand forms.', 'Ggyako empummumpu', 'Kozesa akakondo okuggyako empummumpu.']
-      ]
-    },
-    coffee: {
-      crop: 'Coffee',
-      condition: 'Coffee leaf rust',
-      condition_lg: 'Obulwadde bw’atala ku mmwanyi',
-      confidence: 0.92,
-      severity: 'high',
-      is_healthy: false,
-      is_inconclusive: false,
-      image: DEFAULT_RESULT_PHOTO,
-      fallbackImage: 'assets/cassava_mosaic.jpg',
-      advice: 'Prune dense branches to improve canopy airflow. Collect fallen rust-spotted leaves and consult an agro-dealer for approved copper fungicide.',
-      advice_luganda: 'Saalira amatabi okuyingiza empewo. Kung’aanya amakoola agagudde era weebuuze ku dduuka ly’ebyobulimi ku ddagala lya kopa.',
-      steps: [
-        ['Prune dense canopy', 'Open up branches so sunlight and air dry the leaves.', 'Saalira emmwanyi', 'Salako amatabi agasukkiridde empewo eyingire.'],
-        ['Clear fallen leaves', 'Remove heavily rusted leaves beneath the trees.', 'Ggyawoko amakoola agagudde', 'Kung’aanya amakoola agalwadde wansi w’emiti.'],
-        ['Apply copper protection', 'Ask your agro-dealer for registered copper fungicide.', 'Kozesa eddagala lya kopa', 'Saba eddagala lya kopa erikakasiddwa ku dduuka.']
-      ]
-    }
-  };
-
-  const DEFAULT_HISTORY = [
-    { id: 'seed-0', time: 'Today, 10:42 AM', crop: 'Cassava', condition: 'Cassava mosaic', severity: 'moderate', thumbClass: 'thumb-0', icon: 'leaf', catalogKey: 'cassava' },
-    { id: 'seed-1', time: '11 Oct, 4:18 PM', crop: 'Maize', condition: 'Healthy crop', severity: 'healthy', thumbClass: 'thumb-1', icon: 'shield', catalogKey: 'maize' },
-    { id: 'seed-2', time: '03 Oct, 8:05 AM', crop: 'Banana', condition: 'Black sigatoka', severity: 'moderate', thumbClass: 'thumb-2', icon: 'leaf', catalogKey: 'banana' },
-    { id: 'seed-3', time: '22 Sep, 2:31 PM', crop: 'Coffee', condition: 'Coffee leaf rust', severity: 'high', thumbClass: 'thumb-3', icon: 'leaf', catalogKey: 'coffee' }
-  ];
-
   const AGRO_DEALERS = {
     Masaka: [
       { name: 'Masaka Central Farmers Agro-Inputs', address: 'Elgin Road, Masaka City', phone: '+256772123456' },
@@ -342,10 +219,10 @@
     ]
   };
 
-  const DEFAULT_PREVENTION_TIPS = [
-    ['Inspect young funnels early', 'Check maize whorls every 3–4 days for window-pane leaf feeding and frass.', 'Kebera kasooli omuto mangu', 'Kebera mu mutwe gwa kasooli buli nnaku 3–4 okulaba obubonero.'],
-    ['Hand-pick or apply ash/sand', 'On small plots, crush egg masses and caterpillars early in the morning.', 'Ggyamu obunnyo ku makya', 'Ku nnimiro entono, ggyamu amagi n’obunnyo ku makya ennyo.'],
-    ['Use approved biopesticides', 'Ask your agro-dealer for neem-based or registered selective treatments.', 'Kozesa eddagala erikakasiddwa', 'Saba eddagala lya neem oba erikakasiddwa ku dduuka ly’ebyobulimi.']
+  const GENERAL_SCOUTING_TIPS = [
+    ['Inspect leaves weekly', 'Walk through your garden every week checking undersides and young shoots.', 'Kebera ebikoola buli wiiki', 'Tambula mu nnimiro yo buli wiiki okebere wansi w’ebikoola.'],
+    ['Sterilize farm tools', 'Clean pangas, knives, and hoes before moving between plots.', 'Yosa ebiwabyo by’ennimiro', 'Yosa ebiwabyo n’obwambe nga tonnagenda mu nnimiro ndala.'],
+    ['Use certified planting material', 'Source clean seeds and cuttings from registered agro-dealers.', 'Kozesa ensigo ezikakasiddwa', 'Gula ensigo n’ebiti ebiramu okuva mu maduuka agakakasiddwa.']
   ];
 
   function loadSavedDistrict() {
@@ -353,7 +230,7 @@
       const saved = localStorage.getItem(DISTRICT_STORAGE_KEY);
       if (saved && DISTRICT_COORDS[saved]) return saved;
     } catch (_) {
-      // ignore
+      // ignore storage errors
     }
     return 'Masaka';
   }
@@ -366,15 +243,14 @@
     district: loadSavedDistrict(),
     cropHint: '',
     selectedFile: null,
-    previewUrl: null,
-    currentDiagnosis: cloneDiagnosis(CATALOG.cassava),
-    mockCases: null,
-    backendOnline: false,
-    backendScans: [],
+    userPhotoDataUrl: null,
+    userThumbDataUrl: null,
+    currentDiagnosis: null,
+    nearbyStatus: 'idle', // 'loading' | 'ready' | 'error'
+    nearbyScans: [],
     activeNearbyOutbreak: null,
     isAnalysing: false,
     isSpeaking: false,
-    toastTimer: null,
     googleReady: false,
     googleFailed: false,
     nearbyMapMode: null,
@@ -383,10 +259,6 @@
     nearbyLeafletMap: null,
     nearbyLeafletGroup: null
   };
-
-  function cloneDiagnosis(item) {
-    return JSON.parse(JSON.stringify(item));
-  }
 
   function escapeHtml(value) {
     return String(value ?? '')
@@ -408,15 +280,20 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  function showToast(message) {
+  function showScanError(message, canRetry) {
     const toast = document.getElementById('scan-toast');
-    if (!toast) return;
-    toast.textContent = message;
+    const msgEl = document.getElementById('scan-toast-msg');
+    const retryBtn = document.getElementById('btn-retry-scan');
+    if (!toast || !msgEl || !retryBtn) return;
+    msgEl.textContent = message;
+    retryBtn.textContent = I18N[state.lang].retry;
+    retryBtn.hidden = !canRetry;
     toast.hidden = false;
-    window.clearTimeout(state.toastTimer);
-    state.toastTimer = window.setTimeout(() => {
-      toast.hidden = true;
-    }, 4500);
+  }
+
+  function hideScanError() {
+    const toast = document.getElementById('scan-toast');
+    if (toast) toast.hidden = true;
   }
 
   // Screen elements
@@ -430,6 +307,9 @@
 
   function showScreen(nextScreen) {
     stopSpeech();
+    if (nextScreen === 'result' && !state.currentDiagnosis) {
+      nextScreen = 'scan';
+    }
     if (nextScreen !== state.screen) {
       state.previousScreen = state.screen;
     }
@@ -444,105 +324,86 @@
     } else if (nextScreen === 'result') {
       renderResult(state.currentDiagnosis);
     } else if (nextScreen === 'nearby') {
-      renderNearbyAlertView();
-      renderNearbyUgandaMap();
-      fetchNearbyOutbreaks();
+      fetchLiveNearbyOutbreaks();
     }
   }
 
   // =========================================================
-  // BACKEND HEALTH, MOCK FALLBACK & LIVE NEARBY SCANS (GET /scans)
+  // LIVE NEARBY OUTBREAKS (GET https://eagles-eye-t8td.onrender.com/scans?limit=50)
   // =========================================================
-  async function checkBackendHealth() {
+  async function fetchLiveNearbyOutbreaks() {
+    state.nearbyStatus = 'loading';
+    renderNearbyAlertView();
+    renderNearbyUgandaMap();
+
     try {
       const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 3000);
-      const res = await fetch(`${API_BASE}/`, { signal: controller.signal });
-      window.clearTimeout(timer);
-      if (res.ok) {
-        const info = await res.json();
-        state.backendOnline = info && info.status === 'healthy';
-      }
-    } catch (_) {
-      state.backendOnline = false;
-    }
-  }
-
-  async function loadMockFallbackData() {
-    try {
-      const res = await fetch('./mock_data.json');
-      if (res.ok) {
-        const json = await res.json();
-        if (json && json.mock_cases) {
-          state.mockCases = json.mock_cases;
-        }
-      }
-    } catch (_) {
-      // ignore if unavailable
-    }
-  }
-
-  async function fetchNearbyOutbreaks() {
-    try {
-      const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(`${API_BASE}/scans?limit=100`, { signal: controller.signal });
+      const timer = window.setTimeout(() => controller.abort(), 45000);
+      const res = await fetch(`${API_BASE}/scans?limit=50`, { signal: controller.signal });
       window.clearTimeout(timer);
 
-      if (!res.ok) return;
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
       const payload = await res.json();
       const scans = Array.isArray(payload) ? payload : payload.scans;
-      if (!Array.isArray(scans)) return;
-
-      state.backendOnline = true;
-      state.backendScans = scans;
-      computeClosestOutbreak();
-
-      if (state.screen === 'nearby') {
-        renderNearbyAlertView();
-        renderNearbyUgandaMap();
+      if (!Array.isArray(scans)) {
+        throw new Error('Invalid scans payload');
       }
-      renderPreventionTips();
+
+      state.nearbyScans = scans;
+      state.nearbyStatus = 'ready';
+      computeClosestOutbreakFromLiveScans();
     } catch (_) {
-      // Offline: retain local default alert
+      state.nearbyStatus = 'error';
+      state.activeNearbyOutbreak = null;
     }
+
+    if (state.screen === 'nearby') {
+      renderNearbyAlertView();
+      renderNearbyUgandaMap();
+    }
+    renderPreventionTips();
   }
 
-  function computeClosestOutbreak() {
-    const farm = DISTRICT_COORDS[state.district] || DISTRICT_COORDS.Masaka;
-    const candidates = state.backendScans.filter((s) => {
-      if (!s || s.is_healthy) return false;
+  function computeClosestOutbreakFromLiveScans() {
+    const selectedDistrict = document.getElementById('scan-district')?.value || state.district || 'Masaka';
+    const farm = DISTRICT_COORDS[selectedDistrict] || DISTRICT_COORDS.Masaka;
+
+    const activeDiseaseScans = state.nearbyScans.filter((s) => {
+      if (!s || s.is_healthy === true) return false;
       const sev = String(s.severity || '').toLowerCase();
       const crop = String(s.crop || '');
       return sev !== 'none' && crop !== 'Unknown';
     });
 
-    if (candidates.length === 0) {
+    if (activeDiseaseScans.length === 0) {
       state.activeNearbyOutbreak = null;
       return;
     }
 
     const sevRank = { high: 3, moderate: 2, low: 1 };
-    let best = null;
+    let closest = null;
 
-    candidates.forEach((scan) => {
+    activeDiseaseScans.forEach((scan) => {
       const loc = scan.location || {};
-      const distName = loc.district || 'Unknown';
-      const coords = DISTRICT_COORDS[distName];
-      const lat = Number.isFinite(Number(loc.latitude)) ? Number(loc.latitude) : coords?.lat;
-      const lng = Number.isFinite(Number(loc.longitude)) ? Number(loc.longitude) : coords?.lng;
+      const distName = String(loc.district || 'Unknown');
+      const tableCoords = DISTRICT_COORDS[distName];
+      const lat = tableCoords ? tableCoords.lat : Number(loc.latitude);
+      const lng = tableCoords ? tableCoords.lng : Number(loc.longitude);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
-      const sameDistrict = distName.toLowerCase() === state.district.toLowerCase();
-      const rawKm = sameDistrict ? 6 : Math.max(1, Math.round(haversineKm(farm.lat, farm.lng, lat, lng)));
+      const exactKm = Math.round(haversineKm(farm.lat, farm.lng, lat, lng));
+      const sameDistrict = distName.toLowerCase() === selectedDistrict.toLowerCase() || exactKm === 0;
       const weight = sevRank[String(scan.severity || '').toLowerCase()] || 1;
 
       if (
-        !best ||
-        rawKm < best.distanceKm ||
-        (rawKm === best.distanceKm && weight > best.weight)
+        !closest ||
+        exactKm < closest.distanceKm ||
+        (exactKm === closest.distanceKm && weight > closest.weight)
       ) {
-        best = {
+        closest = {
           crop: String(scan.crop || 'Crop'),
           condition: String(scan.condition || 'Crop disease'),
           severity: String(scan.severity || 'moderate').toLowerCase(),
@@ -550,70 +411,100 @@
           advice_luganda: String(scan.advice_luganda || ''),
           district: distName,
           sameDistrict,
-          lat: sameDistrict ? farm.lat + 0.038 : lat,
-          lng: sameDistrict ? farm.lng + 0.041 : lng,
-          distanceKm: rawKm,
+          lat,
+          lng,
+          distanceKm: exactKm,
           weight,
           timestamp: scan.timestamp || ''
         };
       }
     });
 
-    state.activeNearbyOutbreak = best;
+    state.activeNearbyOutbreak = closest;
   }
 
-  function formatRelativeUpdate(isoStr, lang) {
-    if (!isoStr) return I18N[lang].updated;
+  function formatLiveTimestamp(isoStr, lang) {
+    if (!isoStr) {
+      return lang === 'lg' ? 'Kyatereezeddwa kati okuva ku server' : 'Updated just now from live server';
+    }
     const parsed = new Date(isoStr);
-    if (Number.isNaN(parsed.getTime())) return I18N[lang].updated;
+    if (Number.isNaN(parsed.getTime())) {
+      return lang === 'lg' ? 'Kyatereezeddwa kati okuva ku server' : 'Updated just now from live server';
+    }
     const timeStr = parsed.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     const dateStr = parsed.toLocaleDateString([], { month: 'short', day: 'numeric' });
     return lang === 'lg'
-      ? `API ennanda • Kyatereezeddwa ${dateStr}, ${timeStr}`
-      : `Live API • Updated ${dateStr} at ${timeStr}`;
+      ? `Alipoota esembayo: ${dateStr}, ${timeStr}`
+      : `Latest scan logged ${dateStr} at ${timeStr}`;
   }
 
   function renderNearbyAlertView() {
     const t = I18N[state.lang];
-    const outbreak = state.activeNearbyOutbreak;
+    const heroEl = document.getElementById('alert-hero');
+    const headlineEl = document.getElementById('txt-alert-headline');
+    const cardTitleEl = document.getElementById('txt-alert-card-title');
+    const cardDescEl = document.getElementById('txt-alert-card-desc');
+    const updatedEl = document.getElementById('txt-updated');
 
-    if (!outbreak) {
-      document.getElementById('txt-alert-headline').innerHTML = t.alertHeadline;
-      document.getElementById('txt-map-you').textContent = t.mapYou;
-      document.getElementById('txt-map-pest').textContent = t.mapPest;
-      document.getElementById('txt-map-dist').textContent = t.mapDist;
-      document.getElementById('txt-alert-card-title').textContent = t.alertCardTitle;
-      document.getElementById('txt-alert-card-desc').textContent = t.alertCardDesc;
-      document.getElementById('txt-updated').innerHTML = `<span></span> ${escapeHtml(t.updated)}`;
+    if (state.nearbyStatus === 'loading') {
+      heroEl.classList.remove('is-safe');
+      headlineEl.textContent = t.checkingAlerts;
+      cardTitleEl.textContent = state.lang === 'lg' ? 'Tukebera mu kitundu kyo' : 'Live regional surveillance';
+      cardDescEl.textContent = t.syncingDb;
+      updatedEl.innerHTML = `<span></span> ${escapeHtml(t.syncingDb)}`;
       return;
     }
 
+    if (state.nearbyStatus === 'error') {
+      heroEl.classList.remove('is-safe');
+      headlineEl.textContent = t.alertErrorHeadline;
+      cardTitleEl.textContent = state.lang === 'lg' ? 'Yintaneeti yeetaagisa' : 'Connection required';
+      cardDescEl.textContent = t.alertErrorDesc;
+      updatedEl.innerHTML = `<span></span> ${escapeHtml(t.alertErrorHeadline)}`;
+      return;
+    }
+
+    const outbreak = state.activeNearbyOutbreak;
+    if (!outbreak) {
+      heroEl.classList.add('is-safe');
+      headlineEl.innerHTML = t.noOutbreaksHeadline.replace('{district}', escapeHtml(state.district));
+      cardTitleEl.textContent = t.noOutbreaksTitle;
+      cardDescEl.textContent = t.noOutbreaksDesc;
+      updatedEl.innerHTML = `<span></span> ${escapeHtml(
+        state.lang === 'lg'
+          ? `Server ennanda (${state.nearbyScans.length} ebyakeberebwa)`
+          : `Live database (${state.nearbyScans.length} total scans checked)`
+      )}`;
+      return;
+    }
+
+    heroEl.classList.remove('is-safe');
     const safeCond = escapeHtml(outbreak.condition);
-    const distTag = outbreak.sameDistrict
-      ? (state.lang === 'lg' ? `mu ${escapeHtml(outbreak.district)}` : `~${outbreak.distanceKm} km (${escapeHtml(outbreak.district)})`)
-      : `${outbreak.distanceKm} km`;
+    const safeDist = escapeHtml(outbreak.district);
 
-    document.getElementById('txt-alert-headline').innerHTML =
-      state.lang === 'lg'
-        ? `${safeCond} azuuliddwa <em>${distTag}</em> okuva w’oli`
-        : `${safeCond} confirmed <em>${distTag}</em> from you`;
+    if (outbreak.sameDistrict) {
+      headlineEl.innerHTML =
+        state.lang === 'lg'
+          ? `${safeCond} azuuliddwa mu <em>${safeDist} (0 km)</em>`
+          : `${safeCond} confirmed in <em>${safeDist} (0 km)</em>`;
+    } else {
+      headlineEl.innerHTML =
+        state.lang === 'lg'
+          ? `${safeCond} azuuliddwa <em>${outbreak.distanceKm} km</em> okuva e ${ escapeHtml(state.district) } (${safeDist})`
+          : `${safeCond} confirmed <em>${outbreak.distanceKm} km</em> from you (${safeDist})`;
+    }
 
-    const cropLower = outbreak.crop.toLowerCase();
-    document.getElementById('txt-alert-card-title').textContent =
+    cardTitleEl.textContent =
       state.lang === 'lg'
         ? `Kuuma ${outbreak.crop} wo kati`
-        : `Protect your ${cropLower} now`;
+        : `Protect your ${outbreak.crop.toLowerCase()} now`;
 
-    document.getElementById('txt-alert-card-desc').textContent =
+    cardDescEl.textContent =
       state.lang === 'lg' && outbreak.advice_luganda
         ? outbreak.advice_luganda
-        : outbreak.advice || t.alertCardDesc;
+        : outbreak.advice;
 
-    document.getElementById('txt-map-you').textContent = `${t.mapYou} (${state.district})`;
-    document.getElementById('txt-map-pest').textContent = outbreak.condition.slice(0, 18);
-    document.getElementById('txt-map-dist').textContent = `${outbreak.distanceKm} km`;
-    document.getElementById('txt-updated').innerHTML =
-      `<span></span> ${escapeHtml(formatRelativeUpdate(outbreak.timestamp, state.lang))}`;
+    updatedEl.innerHTML = `<span></span> ${escapeHtml(formatLiveTimestamp(outbreak.timestamp, state.lang))}`;
   }
 
   function getActiveMapPoints() {
@@ -622,36 +513,42 @@
     const live = state.activeNearbyOutbreak;
 
     if (live) {
+      // Slightly separate co-located district markers (~2 km visual offset) so both pins are clearly readable
+      const outLat = live.sameDistrict ? live.lat + 0.015 : live.lat;
+      const outLng = live.sameDistrict ? live.lng + 0.015 : live.lng;
       return {
+        hasOutbreak: true,
         farm,
-        outbreak: { lat: live.lat, lng: live.lng },
-        center: { lat: (farm.lat + live.lat) / 2, lng: (farm.lng + live.lng) / 2 },
+        outbreak: { lat: outLat, lng: outLng },
+        center: { lat: (farm.lat + outLat) / 2, lng: (farm.lng + outLng) / 2 },
         youLabel: `${t.mapYou} (${state.district})`,
-        pestLabel: `${live.condition} · ${live.distanceKm} km`,
+        pestLabel: live.sameDistrict
+          ? `${live.condition} · ${live.district} (0 km)`
+          : `${live.condition} · ${live.district} (${live.distanceKm} km)`,
         sameDistrict: live.sameDistrict
       };
     }
 
-    const fallbackOutbreak = { lat: farm.lat + 0.048, lng: farm.lng + 0.052 };
     return {
+      hasOutbreak: false,
       farm,
-      outbreak: fallbackOutbreak,
-      center: { lat: (farm.lat + fallbackOutbreak.lat) / 2, lng: (farm.lng + fallbackOutbreak.lng) / 2 },
+      outbreak: null,
+      center: farm,
       youLabel: `${t.mapYou} (${state.district})`,
-      pestLabel: `${t.mapPest} · ${t.mapDist}`,
+      pestLabel: '',
       sameDistrict: true
     };
   }
 
   function renderNearbyUgandaMap() {
     const mapBox = document.getElementById('nearby-real-map');
-    const offlineSvg = document.getElementById('nearby-offline-svg');
+    const statusBox = document.getElementById('nearby-map-status');
     if (!mapBox) return;
 
     const pts = getActiveMapPoints();
 
     if (!state.googleFailed && window.google?.maps) {
-      offlineSvg.hidden = true;
+      if (statusBox) statusBox.hidden = true;
       mapBox.hidden = false;
 
       if (!state.nearbyGoogleMap) {
@@ -674,17 +571,6 @@
       state.nearbyGoogleOverlays.forEach((o) => o.setMap(null));
       state.nearbyGoogleOverlays = [];
 
-      const ring = new google.maps.Circle({
-        map: state.nearbyGoogleMap,
-        center: pts.outbreak,
-        radius: pts.sameDistrict ? 2200 : 8500,
-        strokeColor: '#c62828',
-        strokeOpacity: 0.45,
-        strokeWeight: 2,
-        fillColor: '#c62828',
-        fillOpacity: 0.16
-      });
-
       const youMarker = new google.maps.Marker({
         map: state.nearbyGoogleMap,
         position: pts.farm,
@@ -700,39 +586,56 @@
           labelOrigin: new google.maps.Point(0, 2.3)
         }
       });
+      state.nearbyGoogleOverlays.push(youMarker);
 
-      const pestMarker = new google.maps.Marker({
-        map: state.nearbyGoogleMap,
-        position: pts.outbreak,
-        title: pts.pestLabel,
-        label: { text: pts.pestLabel, color: '#c62828', fontSize: '11px', fontWeight: '800' },
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
+      if (pts.hasOutbreak && pts.outbreak) {
+        const ring = new google.maps.Circle({
+          map: state.nearbyGoogleMap,
+          center: pts.outbreak,
+          radius: pts.sameDistrict ? 2200 : 9000,
+          strokeColor: '#c62828',
+          strokeOpacity: 0.45,
+          strokeWeight: 2,
           fillColor: '#c62828',
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 3.5,
-          scale: 8.5,
-          labelOrigin: new google.maps.Point(0, -2.3)
+          fillOpacity: 0.16
+        });
+
+        const pestMarker = new google.maps.Marker({
+          map: state.nearbyGoogleMap,
+          position: pts.outbreak,
+          title: pts.pestLabel,
+          label: { text: pts.pestLabel, color: '#c62828', fontSize: '11px', fontWeight: '800' },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: '#c62828',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 3.5,
+            scale: 8.5,
+            labelOrigin: new google.maps.Point(0, -2.3)
+          }
+        });
+
+        state.nearbyGoogleOverlays.push(ring, pestMarker);
+
+        if (!pts.sameDistrict) {
+          const bounds = new google.maps.LatLngBounds();
+          bounds.extend(pts.farm);
+          bounds.extend(pts.outbreak);
+          state.nearbyGoogleMap.fitBounds(bounds, 44);
+        } else {
+          state.nearbyGoogleMap.setCenter(pts.center);
+          state.nearbyGoogleMap.setZoom(12);
         }
-      });
-
-      if (!pts.sameDistrict) {
-        const bounds = new google.maps.LatLngBounds();
-        bounds.extend(pts.farm);
-        bounds.extend(pts.outbreak);
-        state.nearbyGoogleMap.fitBounds(bounds, 42);
       } else {
-        state.nearbyGoogleMap.setCenter(pts.center);
-        state.nearbyGoogleMap.setZoom(12);
+        state.nearbyGoogleMap.setCenter(pts.farm);
+        state.nearbyGoogleMap.setZoom(11);
       }
-
-      state.nearbyGoogleOverlays.push(ring, youMarker, pestMarker);
       return;
     }
 
     if (window.L && navigator.onLine !== false) {
-      offlineSvg.hidden = true;
+      if (statusBox) statusBox.hidden = true;
       mapBox.hidden = false;
 
       if (!state.nearbyLeafletMap) {
@@ -749,15 +652,6 @@
 
       state.nearbyLeafletGroup.clearLayers();
 
-      L.circle([pts.outbreak.lat, pts.outbreak.lng], {
-        radius: pts.sameDistrict ? 2200 : 8500,
-        color: '#c62828',
-        weight: 2,
-        opacity: 0.5,
-        fillColor: '#c62828',
-        fillOpacity: 0.18
-      }).addTo(state.nearbyLeafletGroup);
-
       L.circleMarker([pts.farm.lat, pts.farm.lng], {
         radius: 8,
         color: '#ffffff',
@@ -773,25 +667,36 @@
         })
         .addTo(state.nearbyLeafletGroup);
 
-      L.circleMarker([pts.outbreak.lat, pts.outbreak.lng], {
-        radius: 8.5,
-        color: '#ffffff',
-        weight: 3,
-        fillColor: '#c62828',
-        fillOpacity: 1
-      })
-        .bindTooltip(escapeHtml(pts.pestLabel), {
-          permanent: true,
-          direction: 'top',
-          offset: [0, -6],
-          className: 'nearby-map-label'
+      if (pts.hasOutbreak && pts.outbreak) {
+        L.circle([pts.outbreak.lat, pts.outbreak.lng], {
+          radius: pts.sameDistrict ? 2200 : 9000,
+          color: '#c62828',
+          weight: 2,
+          opacity: 0.5,
+          fillColor: '#c62828',
+          fillOpacity: 0.18
+        }).addTo(state.nearbyLeafletGroup);
+
+        L.circleMarker([pts.outbreak.lat, pts.outbreak.lng], {
+          radius: 8.5,
+          color: '#ffffff',
+          weight: 3,
+          fillColor: '#c62828',
+          fillOpacity: 1
         })
-        .addTo(state.nearbyLeafletGroup);
+          .bindTooltip(escapeHtml(pts.pestLabel), {
+            permanent: true,
+            direction: 'top',
+            offset: [0, -6],
+            className: 'nearby-map-label'
+          })
+          .addTo(state.nearbyLeafletGroup);
+      }
 
       window.setTimeout(() => {
         if (!state.nearbyLeafletMap) return;
         state.nearbyLeafletMap.invalidateSize();
-        if (!pts.sameDistrict) {
+        if (pts.hasOutbreak && pts.outbreak && !pts.sameDistrict) {
           state.nearbyLeafletMap.fitBounds(
             [
               [pts.farm.lat, pts.farm.lng],
@@ -800,15 +705,17 @@
             { padding: [36, 36], maxZoom: 12 }
           );
         } else {
-          state.nearbyLeafletMap.setView([pts.center.lat, pts.center.lng], 12);
+          state.nearbyLeafletMap.setView([pts.center.lat, pts.center.lng], pts.hasOutbreak ? 12 : 11);
         }
       }, 60);
       return;
     }
 
-    // Complete offline fallback
     mapBox.hidden = true;
-    offlineSvg.hidden = false;
+    if (statusBox) {
+      statusBox.textContent = `${pts.youLabel}${pts.pestLabel ? ' • ' + pts.pestLabel : ''}`;
+      statusBox.hidden = false;
+    }
   }
 
   function refreshNearbyMapViewport() {
@@ -817,17 +724,17 @@
 
     if (state.nearbyMapMode === 'google' && state.nearbyGoogleMap && window.google?.maps) {
       google.maps.event.trigger(state.nearbyGoogleMap, 'resize');
-      if (!pts.sameDistrict) {
+      if (pts.hasOutbreak && pts.outbreak && !pts.sameDistrict) {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend(pts.farm);
         bounds.extend(pts.outbreak);
-        state.nearbyGoogleMap.fitBounds(bounds, 42);
+        state.nearbyGoogleMap.fitBounds(bounds, 44);
       } else {
         state.nearbyGoogleMap.setCenter(pts.center);
       }
     } else if (state.nearbyMapMode === 'leaflet' && state.nearbyLeafletMap) {
       state.nearbyLeafletMap.invalidateSize();
-      if (!pts.sameDistrict) {
+      if (pts.hasOutbreak && pts.outbreak && !pts.sameDistrict) {
         state.nearbyLeafletMap.fitBounds(
           [
             [pts.farm.lat, pts.farm.lng],
@@ -836,7 +743,7 @@
           { padding: [36, 36], maxZoom: 12, animate: false }
         );
       } else {
-        state.nearbyLeafletMap.setView([pts.center.lat, pts.center.lng], 12, { animate: false });
+        state.nearbyLeafletMap.setView([pts.center.lat, pts.center.lng], pts.hasOutbreak ? 12 : 11, { animate: false });
       }
     }
   }
@@ -889,7 +796,7 @@
     try {
       localStorage.setItem(DISTRICT_STORAGE_KEY, newDistrict);
     } catch (_) {
-      // ignore
+      // ignore storage errors
     }
     ['scan-district', 'select-district'].forEach((id) => {
       const sel = document.getElementById(id);
@@ -897,7 +804,7 @@
         sel.value = newDistrict;
       }
     });
-    computeClosestOutbreak();
+    computeClosestOutbreakFromLiveScans();
     renderDealers();
     if (state.screen === 'nearby') {
       renderNearbyAlertView();
@@ -924,7 +831,7 @@
     document.getElementById('txt-scan-instruction').innerHTML = t.scanInstruction;
     const optAuto = document.getElementById('opt-crop-auto');
     if (optAuto) optAuto.textContent = t.cropAuto;
-    document.getElementById('txt-leaf-frame').textContent = t.leafFrame;
+    document.getElementById('txt-leaf-frame').textContent = state.userPhotoDataUrl ? t.leafReady : t.leafFrame;
     document.getElementById('txt-loading-title').textContent = t.loadingTitle;
     document.getElementById('txt-loading-sub').textContent = t.loadingSub;
     document.getElementById('txt-gallery').textContent = t.gallery;
@@ -933,6 +840,7 @@
     document.getElementById('txt-severity-label').textContent = t.severityLabel;
     document.getElementById('txt-steps-kicker').textContent = t.stepsKicker;
     document.getElementById('txt-steps-heading').textContent = t.stepsHeading;
+    document.getElementById('txt-btn-retake').textContent = t.retakeBtn;
     document.getElementById('txt-btn-listen').textContent = t.listenAdvice;
     document.getElementById('txt-btn-dealers').textContent = t.findDealers;
     document.getElementById('txt-nearby-link').textContent = t.nearbyLink;
@@ -952,17 +860,22 @@
     document.getElementById('txt-dealers-alert-btn').textContent = t.nearbyLink;
     document.getElementById('btn-tips-done').textContent = t.gotIt;
 
-    renderResult(state.currentDiagnosis);
+    if (state.currentDiagnosis) {
+      renderResult(state.currentDiagnosis);
+    }
     renderDealers();
     renderNearbyAlertView();
     renderPreventionTips();
+    if (state.screen === 'history') {
+      renderHistory();
+    }
     if (state.screen === 'nearby') {
       renderNearbyUgandaMap();
     }
   }
 
   // =========================================================
-  // IMAGE PREPARATION & LIVE DIAGNOSIS (POST /diagnose)
+  // REAL CAMERA/FILE UPLOAD & LIVE POST /diagnose
   // =========================================================
   function buildStepsFromAdvice(adviceEn, adviceLg) {
     const splitSentences = (txt) =>
@@ -975,7 +888,7 @@
     const lgParts = splitSentences(adviceLg);
 
     if (enParts.length === 0) {
-      return CATALOG.cassava.steps;
+      return [];
     }
 
     const titlesEn = ['Immediate field action', 'Clean farm hygiene', 'Follow-up care'];
@@ -989,15 +902,38 @@
     ]);
   }
 
-  async function prepareImageForBackend(file) {
+  function createHistoryThumbnail(dataUrl) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSide = 260;
+        let { width, height } = img;
+        if (width > maxSide || height > maxSide) {
+          const scale = Math.min(maxSide / width, maxSide / height);
+          width = Math.max(1, Math.round(width * scale));
+          height = Math.max(1, Math.round(height * scale));
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.78));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
+  async function ensureUploadableImageFile(file) {
     const allowed = new Set(['image/jpeg', 'image/png', 'image/webp']);
     const mime = String(file.type || '').toLowerCase();
 
-    if (allowed.has(mime) && file.size > 0 && file.size <= 3.8 * 1024 * 1024) {
-      return { blob: file, filename: file.name || 'crop_leaf.jpg' };
+    if (allowed.has(mime) && file.size > 0 && file.size <= 4.8 * 1024 * 1024) {
+      return file;
     }
 
-    // Resize/compress oversized smartphone camera photos or convert unsupported formats to JPEG <= 5 MB
+    // Compress oversized phone camera photos (> 4.8 MB) or convert HEIC/other formats to JPEG File
     return new Promise((resolve) => {
       const img = new Image();
       const objUrl = URL.createObjectURL(file);
@@ -1019,9 +955,9 @@
           (blob) => {
             if (blob) {
               const stem = String(file.name || 'crop_leaf').replace(/\.[^.]+$/, '');
-              resolve({ blob, filename: `${stem}.jpg` });
+              resolve(new File([blob], `${stem}.jpg`, { type: 'image/jpeg' }));
             } else {
-              resolve({ blob: file, filename: file.name || 'crop_leaf.jpg' });
+              resolve(file);
             }
           },
           'image/jpeg',
@@ -1030,251 +966,156 @@
       };
       img.onerror = () => {
         URL.revokeObjectURL(objUrl);
-        resolve({ blob: file, filename: file.name || 'crop_leaf.jpg' });
+        resolve(file);
       };
       img.src = objUrl;
     });
   }
 
-  function buildOfflineDiagnosis(filename) {
-    const hint = (state.cropHint || filename || '').toLowerCase();
-    const mc = state.mockCases;
-
-    if (hint.includes('banana') || hint.includes('matooke') || hint.includes('wilt')) {
-      if (mc && mc.infected_banana) {
-        const b = mc.infected_banana;
-        return {
-          crop: b.crop,
-          condition: b.condition,
-          condition_lg: 'Kiijukizo ky’ebitooke (BXW)',
-          confidence: b.confidence,
-          severity: b.severity,
-          is_healthy: b.is_healthy,
-          is_inconclusive: false,
-          image: 'assets/banana_wilt.jpg',
-          fallbackImage: 'assets/banana_wilt.jpg',
-          advice: b.advice,
-          advice_luganda: b.advice_luganda,
-          steps: buildStepsFromAdvice(b.advice, b.advice_luganda)
-        };
-      }
-      return cloneDiagnosis(CATALOG.banana_wilt);
-    }
-
-    if (hint.includes('maize') || hint.includes('corn') || hint.includes('healthy')) {
-      if (mc && mc.healthy_crop) {
-        const m = mc.healthy_crop;
-        return {
-          crop: m.crop,
-          condition: m.condition,
-          condition_lg: 'Kasooli mulamu bulungi',
-          confidence: m.confidence,
-          severity: 'healthy',
-          is_healthy: m.is_healthy,
-          is_inconclusive: false,
-          image: 'assets/healthy_maize.jpg',
-          fallbackImage: 'assets/healthy_maize.jpg',
-          advice: m.advice,
-          advice_luganda: m.advice_luganda,
-          steps: buildStepsFromAdvice(m.advice, m.advice_luganda)
-        };
-      }
-      return cloneDiagnosis(CATALOG.maize);
-    }
-
-    if (hint.includes('coffee') || hint.includes('rust')) {
-      return cloneDiagnosis(CATALOG.coffee);
-    }
-
-    return cloneDiagnosis(CATALOG.cassava);
-  }
-
-  function getSampleAssetForHint() {
-    const h = state.cropHint.toLowerCase();
-    if (h.includes('banana')) return { path: 'assets/banana_wilt.jpg', name: 'banana_wilt.jpg' };
-    if (h.includes('maize')) return { path: 'assets/healthy_maize.jpg', name: 'healthy_maize.jpg' };
-    return { path: 'assets/cassava_mosaic.jpg', name: 'cassava_mosaic.jpg' };
-  }
-
-  async function runCapture() {
-    if (state.isAnalysing) return;
+  async function diagnoseUserPhoto(rawFile) {
+    if (!rawFile || state.isAnalysing) return;
     state.isAnalysing = true;
-
-    const toast = document.getElementById('scan-toast');
-    if (toast) toast.hidden = true;
+    hideScanError();
 
     const loadingCard = document.getElementById('loading-card');
     loadingCard.hidden = false;
 
-    const startedAt = Date.now();
-    let apiDiagnosis = null;
-    let clientValidationError = null;
-    let sampleAssetUsed = null;
+    const districtSelect = document.getElementById('scan-district');
+    const cropHintSelect = document.getElementById('scan-crop-hint');
+    const selectedDistrict = (districtSelect && districtSelect.value) || state.district || 'Masaka';
 
     try {
+      const uploadFile = await ensureUploadableImageFile(rawFile);
+
       const formData = new FormData();
-      formData.append('district', state.district || 'Masaka');
-      if (state.cropHint) {
-        formData.append('crop_hint', state.cropHint);
+      formData.append('image', uploadFile);
+      formData.append('district', selectedDistrict);
+      if (cropHintSelect && cropHintSelect.value) {
+        formData.append('crop_hint', cropHintSelect.value);
       }
 
-      if (state.selectedFile) {
-        const prepared = await prepareImageForBackend(state.selectedFile);
-        formData.append('image', prepared.blob, prepared.filename);
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 60000);
+
+      const response = await fetch(`${API_BASE}/diagnose`, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal
+      });
+
+      window.clearTimeout(timer);
+
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch (_) {
+        payload = null;
+      }
+
+      if (!response.ok || !payload || (payload.status !== 'success' && payload.status !== 'inconclusive') || !payload.data) {
+        const errMsg =
+          (payload && payload.message) ||
+          `${I18N[state.lang].networkError} (HTTP ${response.status})`;
+        loadingCard.hidden = true;
+        state.isAnalysing = false;
+        showScanError(errMsg, true);
+        return;
+      }
+
+      const d = payload.data;
+      const conf = Number(d.confidence ?? 0);
+      const isInconclusive =
+        payload.status === 'inconclusive' ||
+        conf <= 0.40 ||
+        (!d.is_healthy &&
+          (d.crop === 'Unknown' ||
+            String(d.condition || '').toLowerCase() === 'unknown' ||
+            String(d.condition || '').toLowerCase().includes('inconclusive')));
+
+      let normSev;
+      if (isInconclusive) {
+        normSev = 'inconclusive';
+      } else if (d.is_healthy || d.severity === 'none') {
+        normSev = 'healthy';
       } else {
-        sampleAssetUsed = getSampleAssetForHint();
-        const sampleBlob = await fetch(sampleAssetUsed.path)
-          .then((r) => (r.ok ? r.blob() : null))
-          .catch(() => null);
-        if (sampleBlob) {
-          const typedBlob = sampleBlob.type
-            ? sampleBlob
-            : new Blob([sampleBlob], { type: 'image/jpeg' });
-          formData.append('image', typedBlob, sampleAssetUsed.name);
-        }
+        normSev = String(d.severity || 'moderate').toLowerCase();
       }
 
-      if (formData.has('image')) {
-        // 30s timeout gives multimodal Gemini + Firestore sufficient headroom
-        const controller = new AbortController();
-        const timer = window.setTimeout(() => controller.abort(), 30000);
-
-        const response = await fetch(`${API_BASE}/diagnose`, {
-          method: 'POST',
-          body: formData,
-          signal: controller.signal
-        });
-
-        window.clearTimeout(timer);
-
-        let payload = null;
-        try {
-          payload = await response.json();
-        } catch (_) {
-          payload = null;
-        }
-
-        if (response.ok && payload && payload.data) {
-          state.backendOnline = true;
-          const d = payload.data;
-          const conf = typeof d.confidence === 'number' ? d.confidence : 0.9;
-          const isInconclusive =
-            payload.status === 'inconclusive' ||
-            (!d.is_healthy &&
-              (conf <= 0.4 ||
-                d.crop === 'Unknown' ||
-                String(d.condition || '').toLowerCase() === 'unknown' ||
-                String(d.condition || '').toLowerCase().includes('inconclusive')));
-
-          let normSev;
-          if (isInconclusive) {
-            normSev = 'inconclusive';
-          } else if (d.is_healthy || d.severity === 'none') {
-            normSev = 'healthy';
-          } else {
-            normSev = String(d.severity || 'moderate').toLowerCase();
-          }
-
-          if (d.location?.district && DISTRICT_COORDS[d.location.district]) {
-            setDistrict(d.location.district);
-          }
-
-          const resolvedImg =
-            state.previewUrl ||
-            (sampleAssetUsed ? sampleAssetUsed.path : DEFAULT_RESULT_PHOTO);
-
-          apiDiagnosis = {
-            crop: d.crop || 'Unknown',
-            condition: isInconclusive && (!d.condition || d.condition === 'Unknown')
-              ? 'Unclear leaf photo'
-              : (d.condition || 'Crop condition'),
-            condition_lg: isInconclusive
-              ? 'Ekifanyi tekirabika bulungi'
-              : (d.condition || 'Obulwadde bw’ekirime'),
-            confidence: conf,
-            severity: normSev,
-            is_healthy: Boolean(d.is_healthy),
-            is_inconclusive: isInconclusive,
-            image: resolvedImg,
-            fallbackImage: sampleAssetUsed ? sampleAssetUsed.path : 'assets/cassava_mosaic.jpg',
-            advice: d.advice || CATALOG.cassava.advice,
-            advice_luganda: d.advice_luganda || CATALOG.cassava.advice_luganda,
-            location: d.location || null,
-            timestamp: d.timestamp || new Date().toISOString(),
-            steps: buildStepsFromAdvice(d.advice, d.advice_luganda)
-          };
-
-          // Refresh nearby alerts in background so the newly saved scan appears on the map
-          if (!isInconclusive) {
-            fetchNearbyOutbreaks();
-          }
-        } else if (response.status === 400 || response.status === 413) {
-          clientValidationError =
-            (payload && payload.message) || 'Please upload a valid JPEG, PNG, or WebP photo under 5 MB.';
-        }
+      if (d.location?.district && DISTRICT_COORDS[d.location.district]) {
+        setDistrict(d.location.district);
       }
-    } catch (_) {
-      // Backend offline or unreachable — fall back cleanly to offline catalog/mock_data.json
-    }
 
-    if (clientValidationError) {
+      const liveDiagnosis = {
+        crop: d.crop || 'Unknown',
+        condition:
+          isInconclusive && (!d.condition || d.condition === 'Unknown')
+            ? 'Inconclusive Image'
+            : String(d.condition || 'Unknown'),
+        confidence: conf,
+        severity: normSev,
+        is_healthy: Boolean(d.is_healthy),
+        is_inconclusive: isInconclusive,
+        photoDataUrl: state.userPhotoDataUrl,
+        thumbDataUrl: state.userThumbDataUrl || state.userPhotoDataUrl,
+        advice: String(d.advice || ''),
+        advice_luganda: String(d.advice_luganda || ''),
+        location: d.location || null,
+        timestamp: d.timestamp || new Date().toISOString(),
+        steps: buildStepsFromAdvice(d.advice, d.advice_luganda)
+      };
+
+      state.currentDiagnosis = liveDiagnosis;
+
+      if (!isInconclusive) {
+        saveScanToHistory(liveDiagnosis);
+      }
+
       loadingCard.hidden = true;
       state.isAnalysing = false;
-      showToast(clientValidationError);
-      return;
+      state.resultOrigin = 'scan';
+      showScreen('result');
+    } catch (_) {
+      loadingCard.hidden = true;
+      state.isAnalysing = false;
+      showScanError(I18N[state.lang].networkError, true);
     }
-
-    if (!apiDiagnosis) {
-      apiDiagnosis = buildOfflineDiagnosis(state.selectedFile ? state.selectedFile.name : '');
-      if (state.previewUrl) {
-        apiDiagnosis.image = state.previewUrl;
-      } else if (sampleAssetUsed) {
-        apiDiagnosis.image = sampleAssetUsed.path;
-      }
-    }
-
-    const elapsed = Date.now() - startedAt;
-    if (elapsed < 900) {
-      await new Promise((resolve) => window.setTimeout(resolve, 900 - elapsed));
-    }
-
-    state.currentDiagnosis = apiDiagnosis;
-    if (!apiDiagnosis.is_inconclusive) {
-      saveScanToHistory(apiDiagnosis);
-    }
-
-    loadingCard.hidden = true;
-    state.isAnalysing = false;
-    state.resultOrigin = 'scan';
-    showScreen('result');
   }
 
   function renderResult(diag) {
     if (!diag) return;
     const t = I18N[state.lang];
 
+    // Display strictly the farmer's actual uploaded/captured photo data URL
     const resImage = document.getElementById('res-image');
-    const primaryImg = diag.image || DEFAULT_RESULT_PHOTO;
-    const fallbackImg = diag.fallbackImage || 'assets/cassava_mosaic.jpg';
-    resImage.style.backgroundImage = `url('${primaryImg}'), url('${fallbackImg}')`;
-    resImage.setAttribute('aria-label', `${diag.crop} — ${diag.condition}`);
+    const actualPhoto = diag.photoDataUrl || diag.thumbDataUrl || state.userPhotoDataUrl || '';
+    if (actualPhoto) {
+      resImage.src = actualPhoto;
+      resImage.hidden = false;
+    } else {
+      resImage.removeAttribute('src');
+      resImage.hidden = true;
+    }
+    resImage.alt = `${diag.crop} — ${diag.condition}`;
 
-    document.getElementById('res-crop').textContent = String(diag.crop || 'CASSAVA').toUpperCase();
-    document.getElementById('res-condition').textContent =
-      state.lang === 'lg' && diag.condition_lg ? diag.condition_lg : diag.condition;
+    document.getElementById('res-crop').textContent = String(diag.crop || 'UNKNOWN').toUpperCase();
+    document.getElementById('res-condition').textContent = diag.condition;
 
-    const confPct = typeof diag.confidence === 'number' ? Math.round(diag.confidence * 100) : null;
-    const isLowConf = Boolean(diag.is_inconclusive) || (typeof diag.confidence === 'number' && diag.confidence < 0.5);
-    const isModConf = !isLowConf && typeof diag.confidence === 'number' && diag.confidence < 0.75;
-    const baseConfText = isLowConf
+    const confPct = typeof diag.confidence === 'number' ? Math.round(diag.confidence * 100) : 0;
+    const isInconclusive = Boolean(diag.is_inconclusive) || (typeof diag.confidence === 'number' && diag.confidence <= 0.40);
+    const isModConf = !isInconclusive && typeof diag.confidence === 'number' && diag.confidence < 0.75;
+    const baseConfText = isInconclusive
       ? t.lowConfidence
       : isModConf
         ? t.moderateConfidence
         : t.highConfidence;
 
     const confEl = document.getElementById('res-confidence');
-    confEl.textContent = confPct !== null ? `${baseConfText} (${confPct}%)` : baseConfText;
-    confEl.parentElement?.classList.toggle('is-low', isLowConf);
+    const confBadge = document.getElementById('res-confidence-badge');
+    confEl.textContent = `${baseConfText} (${confPct}%)`;
+    confBadge.classList.toggle('is-low', isInconclusive);
+
+    const btnRetake = document.getElementById('btn-retake');
+    btnRetake.hidden = !isInconclusive;
 
     const sev = String(diag.severity || 'moderate').toLowerCase();
     const resSev = document.getElementById('res-severity');
@@ -1284,12 +1125,12 @@
     resSev.className = '';
     resBar.className = '';
 
-    if (sev === 'inconclusive' || diag.is_inconclusive) {
-      resSev.textContent = state.lang === 'lg' ? 'Tekirabika' : 'Unclear photo';
+    if (isInconclusive || sev === 'inconclusive') {
+      resSev.textContent = state.lang === 'lg' ? 'Tekirabika bulungi' : 'Unclear photo';
       resBar.classList.add('tone-inconclusive');
       resNote.textContent = state.lang === 'lg'
-        ? 'Kuba ekifanyi ekirala ekiri okumpi mu kitangaala ekirungi.'
-        : 'Retake a closer, well-lit photo of a single affected leaf.';
+        ? 'Ekifanyi tekirabika bulungi. Nyiga wansi okukuba ekifanyi ekirala ekiri okumpi mu kitangaala.'
+        : 'Confidence is too low for a reliable diagnosis. Please retake a closer, well-lit photo of the affected leaf.';
     } else if (sev === 'high') {
       resSev.textContent = state.lang === 'lg' ? 'Kw’amaanyi' : 'High';
       resSev.classList.add('tone-high');
@@ -1318,8 +1159,12 @@
         : 'Act soon to protect the rest of your field.';
     }
 
-    const steps = Array.isArray(diag.steps) && diag.steps.length ? diag.steps : CATALOG.cassava.steps;
-    document.getElementById('res-step-count').textContent = `1–${steps.length}`;
+    const steps = Array.isArray(diag.steps) && diag.steps.length
+      ? diag.steps
+      : buildStepsFromAdvice(diag.advice, diag.advice_luganda);
+
+    document.getElementById('res-step-count').textContent =
+      steps.length > 1 ? `1–${steps.length}` : '1';
 
     const checklist = document.getElementById('res-checklist');
     checklist.innerHTML = steps
@@ -1336,19 +1181,19 @@
   }
 
   // =========================================================
-  // HISTORY PERSISTENCE
+  // REAL SCAN HISTORY (ZERO DEMO ITEMS)
   // =========================================================
   function loadHistory() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (_) {
       // ignore storage errors
     }
-    return DEFAULT_HISTORY.slice();
+    return [];
   }
 
   function saveScanToHistory(diag) {
@@ -1357,12 +1202,28 @@
       const sev = String(diag.severity || 'moderate').toLowerCase();
       const normalizedSev = sev === 'none' ? 'healthy' : sev;
 
-      const timeStr = 'Today, ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-      const thumbClass = normalizedSev === 'high'
-        ? 'thumb-high'
-        : normalizedSev === 'healthy'
-          ? 'thumb-1'
-          : 'thumb-moderate';
+      const storedDiag = {
+        crop: diag.crop,
+        condition: diag.condition,
+        confidence: diag.confidence,
+        severity: normalizedSev,
+        is_healthy: diag.is_healthy,
+        is_inconclusive: false,
+        thumbDataUrl: diag.thumbDataUrl || '',
+        advice: diag.advice,
+        advice_luganda: diag.advice_luganda,
+        location: diag.location,
+        timestamp: diag.timestamp,
+        steps: diag.steps
+      };
+
+      const parsedDate = diag.timestamp ? new Date(diag.timestamp) : new Date();
+      const timeStr = parsedDate.toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
 
       list.unshift({
         id: 'scan-' + Date.now(),
@@ -1370,14 +1231,13 @@
         crop: diag.crop,
         condition: diag.condition,
         severity: normalizedSev,
-        thumbClass,
-        icon: normalizedSev === 'healthy' ? 'shield' : 'leaf',
-        diagnosis: diag
+        thumbDataUrl: diag.thumbDataUrl || '',
+        diagnosis: storedDiag
       });
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 25)));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 15)));
     } catch (_) {
-      // ignore storage errors
+      // ignore quota/storage errors
     }
   }
 
@@ -1387,16 +1247,23 @@
     const container = document.getElementById('history-list');
     container.innerHTML = '';
 
+    if (scans.length === 0) {
+      container.innerHTML = `<div class="empty-history">${escapeHtml(I18N[state.lang].emptyHistory)}</div>`;
+      return;
+    }
+
     scans.forEach((scan) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'history-item';
 
       const sev = String(scan.severity || 'moderate').toLowerCase();
-      const iconSvg = scan.icon === 'shield' ? SVG_ICONS.shield : SVG_ICONS.leaf;
+      const thumbInner = scan.thumbDataUrl
+        ? `<img src="${escapeHtml(scan.thumbDataUrl)}" alt="${escapeHtml(scan.crop)}">`
+        : (sev === 'healthy' ? SVG_ICONS.shield : SVG_ICONS.leaf);
 
       btn.innerHTML = `
-        <span class="history-thumb ${escapeHtml(scan.thumbClass || 'thumb-0')}">${iconSvg}</span>
+        <span class="history-thumb">${thumbInner}</span>
         <div>
           <small>${escapeHtml(scan.time)}</small>
           <strong>${escapeHtml(scan.crop)}</strong>
@@ -1407,10 +1274,8 @@
       `;
 
       btn.addEventListener('click', () => {
-        const chosen = scan.diagnosis
-          ? cloneDiagnosis(scan.diagnosis)
-          : cloneDiagnosis(CATALOG[scan.catalogKey] || CATALOG.cassava);
-        state.currentDiagnosis = chosen;
+        if (!scan.diagnosis) return;
+        state.currentDiagnosis = JSON.parse(JSON.stringify(scan.diagnosis));
         state.resultOrigin = 'history';
         showScreen('result');
       });
@@ -1427,12 +1292,13 @@
       stopSpeech();
       return;
     }
-    if (!('speechSynthesis' in window)) {
+    if (!('speechSynthesis' in window) || !state.currentDiagnosis) {
       return;
     }
 
-    const diag = state.currentDiagnosis || CATALOG.cassava;
+    const diag = state.currentDiagnosis;
     const text = state.lang === 'lg' ? diag.advice_luganda || diag.advice : diag.advice;
+    if (!text) return;
 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -1503,13 +1369,14 @@
     const listEl = document.getElementById('tips-checklist');
     const live = state.activeNearbyOutbreak;
 
-    let tips = DEFAULT_PREVENTION_TIPS;
+    let tips = GENERAL_SCOUTING_TIPS;
     if (live && live.advice) {
       titleEl.textContent =
         state.lang === 'lg'
           ? `Okuziyiza ${live.condition}`
           : `${live.condition} prevention`;
-      tips = buildStepsFromAdvice(live.advice, live.advice_luganda);
+      const built = buildStepsFromAdvice(live.advice, live.advice_luganda);
+      if (built.length > 0) tips = built;
     } else {
       titleEl.textContent = I18N[state.lang].tipsTitle;
     }
@@ -1527,49 +1394,93 @@
       .join('');
   }
 
+  // =========================================================
+  // EVENT BINDINGS
+  // =========================================================
   function bindEvents() {
+    const cameraFileInput = document.getElementById('camera-file-input');
+    const viewfinderCard = document.getElementById('viewfinder-card');
+    const btnCapture = document.getElementById('btn-capture');
+    const btnGallery = document.getElementById('btn-gallery');
+
+    function openCameraPicker(preferEnvironmentCamera) {
+      if (state.isAnalysing || !cameraFileInput) return;
+      hideScanError();
+      if (preferEnvironmentCamera) {
+        cameraFileInput.setAttribute('capture', 'environment');
+      } else {
+        cameraFileInput.removeAttribute('capture');
+      }
+      cameraFileInput.value = '';
+      cameraFileInput.click();
+    }
+
     // Welcome
     document.getElementById('btn-lang-en').addEventListener('click', () => setLanguage('en'));
     document.getElementById('btn-lang-lg').addEventListener('click', () => setLanguage('lg'));
     document.getElementById('btn-start').addEventListener('click', () => showScreen('scan'));
     document.getElementById('btn-open-history').addEventListener('click', () => showScreen('history'));
 
-    // Scan
+    // Scan navigation & live bell
     document.getElementById('btn-scan-back').addEventListener('click', () => showScreen('welcome'));
     document.getElementById('btn-scan-bell').addEventListener('click', () => showScreen('nearby'));
-    document.getElementById('btn-capture').addEventListener('click', runCapture);
+
+    // Viewfinder card, shutter button, and gallery button all trigger cameraFileInput.click()
+    viewfinderCard.addEventListener('click', () => openCameraPicker(true));
+    viewfinderCard.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openCameraPicker(true);
+      }
+    });
+    btnCapture.addEventListener('click', () => openCameraPicker(true));
+    btnGallery.addEventListener('click', () => openCameraPicker(false));
+
+    // Read real user photo with FileReader as data URL, render in viewfinder, keep in memory & diagnose
+    cameraFileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      state.selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const dataUrl = String(ev.target?.result || '');
+        if (!dataUrl) return;
+
+        state.userPhotoDataUrl = dataUrl;
+        document.getElementById('scan-photo').style.backgroundImage = `url("${dataUrl}")`;
+        document.getElementById('txt-leaf-frame').textContent = I18N[state.lang].leafReady;
+
+        state.userThumbDataUrl = await createHistoryThumbnail(dataUrl);
+        diagnoseUserPhoto(file);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById('btn-retry-scan').addEventListener('click', () => {
+      if (state.selectedFile) {
+        diagnoseUserPhoto(state.selectedFile);
+      } else {
+        openCameraPicker(true);
+      }
+    });
 
     document.getElementById('scan-district').addEventListener('change', (e) => {
       setDistrict(e.target.value);
     });
     document.getElementById('scan-crop-hint').addEventListener('change', (e) => {
       state.cropHint = e.target.value;
-      if (!state.selectedFile) {
-        const asset = getSampleAssetForHint();
-        document.getElementById('scan-photo').style.backgroundImage = `url('${asset.path}')`;
-      }
     });
 
-    const fileInput = document.getElementById('file-input');
-    document.getElementById('btn-gallery').addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      state.selectedFile = file;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        state.previewUrl = String(ev.target.result || '');
-        document.getElementById('scan-photo').style.backgroundImage = `url('${state.previewUrl}')`;
-        runCapture();
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // Result
+    // Result screen actions + Retake clearer photo handler
     document.getElementById('btn-result-back').addEventListener('click', () => {
       showScreen(state.resultOrigin === 'history' ? 'history' : 'scan');
     });
     document.getElementById('btn-result-bell').addEventListener('click', () => showScreen('nearby'));
+    document.getElementById('btn-retake').addEventListener('click', () => {
+      showScreen('scan');
+      openCameraPicker(true);
+    });
     document.getElementById('btn-listen').addEventListener('click', toggleSpeech);
     document.getElementById('btn-nearby-link').addEventListener('click', () => showScreen('nearby'));
 
@@ -1595,12 +1506,14 @@
 
     // Nearby alert & Prevention tips sheet
     document.getElementById('btn-nearby-back').addEventListener('click', () => {
-      const backTarget = state.previousScreen && state.previousScreen !== 'nearby' ? state.previousScreen : 'result';
+      const backTarget =
+        state.previousScreen && state.previousScreen !== 'nearby'
+          ? state.previousScreen
+          : (state.currentDiagnosis ? 'result' : 'scan');
       showScreen(backTarget);
     });
     document.getElementById('btn-nearby-bell').addEventListener('click', () => {
-      renderPreventionTips();
-      document.getElementById('sheet-tips').hidden = false;
+      fetchLiveNearbyOutbreaks();
     });
 
     const sheetTips = document.getElementById('sheet-tips');
@@ -1657,13 +1570,8 @@
     populateDistrictSelects();
     bindEvents();
     renderDealers();
-    renderNearbyAlertView();
     renderPreventionTips();
     renderHistory();
-    renderResult(state.currentDiagnosis);
-    loadMockFallbackData();
-    checkBackendHealth();
-    fetchNearbyOutbreaks();
     registerServiceWorker();
   }
 

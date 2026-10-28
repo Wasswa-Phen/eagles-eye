@@ -33,20 +33,20 @@ flowchart TD
         LF["Leaflet + OpenStreetMap Automatic Fallback"]
     end
 
-    subgraph Backend["Backend API Server (Python Flask + Gunicorn / Cloud Run)"]
-        API["Flask REST API (backend/app.py)"]
+    subgraph Backend["Live Backend API Server (Python Flask + Gunicorn on Render)"]
+        API["Live Flask REST API (https://eagles-eye-t8td.onrender.com)"]
         DIST["54-District Privacy Geotagger (backend/districts.py)"]
         STORE["Storage Adapter (backend/db.py)"]
     end
 
     subgraph Cloud["Google Cloud & AI Services"]
-        GEM["Google Gemini 3.5 Flash-Lite (Structured JSON Vision)"]
+        GEM["Google Gemini Multimodal AI (Structured JSON Vision)"]
         FS["Google Cloud Firestore ('scans' Collection)"]
         MEM["In-Memory Fallback Store (Local Dev Mode)"]
     end
 
-    FA -->|"POST /diagnose (JPEG <= 5MB, district, crop_hint)"| API
-    FA -->|"GET /scans?limit=100 & GET /"| API
+    FA -->|"POST /diagnose (Real user photo, district, crop_hint)"| API
+    FA -->|"GET /scans?limit=50 (Haversine nearby outbreak distance)"| API
     DB -->|"GET /scans?limit=200 & ?district=..."| API
     DB -->|"GET / (Health & Storage Mode)"| API
 
@@ -104,48 +104,48 @@ sequenceDiagram
 flowchart TD
     Start(["Open Eagles Eye PWA"]) --> Welcome["1. Welcome Screen: Toggle English / Luganda"]
     Welcome -->|"Tap Start"| Scan["2. Scan Screen: Choose District & Optional Crop Hint"]
-    Welcome -->|"View scan history"| History["5. Scan History: LocalStorage Past Scans"]
+    Welcome -->|"View scan history"| History["5. Scan History: Real Saved Farmer Scans"]
 
-    Scan -->|"Shutter / Gallery Photo"| Compress["Canvas Image Prep (JPEG <= 5MB)"]
-    Compress -->|"POST /diagnose"| CheckAPI{"Backend Online & Configured?"}
+    Scan -->|"Tap Viewfinder / Shutter / Gallery"| Picker["Hardware Camera / File Picker (FileReader Data URL Preview)"]
+    Picker -->|"POST https://eagles-eye-t8td.onrender.com/diagnose"| CheckAPI{"API Response"}
 
-    CheckAPI -->|"200 Success"| Result["3. Crop Result: Confidence %, Severity Bar & 3 Action Steps"]
-    CheckAPI -->|"200 Inconclusive"| Retake["Unclear Photo Advisory: Retake Well-Lit Leaf"]
-    CheckAPI -->|"Offline / 503"| Fallback["Offline Catalog & mock_data.json Fallback"]
-    Fallback --> Result
-    Retake -->|"Back"| Scan
+    CheckAPI -->|"status === success"| Result["3. Crop Result: Actual User Photo + Confidence %, Severity & 3 Steps"]
+    CheckAPI -->|"status === inconclusive or confidence <= 0.40"| Retake["Unclear Photo Prompt: Retake Clearer Photo"]
+    CheckAPI -->|"Network / HTTP Error"| RetryToast["Toast Error Banner + One-Tap Retry"]
+    Retake -->|"Retake clearer photo"| Picker
+    RetryToast -->|"Retry"| Picker
 
     Result -->|"Listen to advice"| TTS["Web Speech TTS (English or Luganda Audio)"]
     Result -->|"Find nearest agro-dealer"| Dealers["Slide-Up Sheet: District Agro-Dealers & One-Tap Call"]
-    Result -->|"View nearby crop alert / Bell Icon"| Nearby["4. Nearby Alert: Real Uganda Map + Haversine Distance (GET /scans)"]
+    Result -->|"View nearby crop alert / Bell Icon"| Nearby["4. Nearby Alert: Real Uganda Map + Live Haversine Distance (GET /scans?limit=50)"]
 
     Dealers -->|"Change District / View Alert"| Nearby
     Nearby -->|"See prevention tips"| Tips["Slide-Up Sheet: 3-Step Outbreak Prevention Checklist"]
     History -->|"Tap Past Scan"| Result
-    History -->|"Scan another crop"| Scan
+    History -->|"Scan a crop leaf"| Scan
 ```
 
 ### 2. Extension Officer Surveillance Dashboard Flow (`clients/dashboard/`)
 
 ```mermaid
 flowchart TD
-    Entry(["Open Surveillance Dashboard"]) --> Boot["Auto-Detect API Base + Fetch GET / & GET /scans?limit=200"]
-    Boot --> Mode{"Live Scans Available?"}
+    Entry(["Open Surveillance Dashboard"]) --> Boot["Connect to https://eagles-eye-t8td.onrender.com (GET / & GET /scans?limit=200)"]
+    Boot --> Mode{"Live Database Status"}
 
-    Mode -->|"Yes (Firestore / Memory)"| Live["Live API Mode: Dynamic KPIs, District Heat Map & Ranked Threats"]
-    Mode -->|"Offline / 0 Scans"| Baseline["Resilient Baseline Mode: seed_data.json + Regional Preview"]
+    Mode -->|"Online (Firestore / Memory)"| Live["Live Surveillance Mode: Real KPIs, District Heat Map & Ranked Threats"]
+    Mode -->|"Unreachable"| Offline["Clean Offline Notice + Sync Live API Retry"]
 
     Live --> Overview["Overview Tab: 4 KPI Cards + Real Uganda Map + Top Threats"]
-    Baseline --> Overview
+    Offline --> Overview
 
     Overview -->|"Cycle Crop / Disease / Period"| FilterMap["Filter Uganda Heat Map Halos & Threat Counts"]
     Overview -->|"Outbreak map Tab"| FullMap["Expanded Full-Width Interactive Uganda Map"]
     Overview -->|"Reports Tab / View all threats"| Reports["Field Diagnostic Reports: Filter by District, Crop & Severity"]
-    Overview -->|"Download report"| CSV["Export Filtered Threats & Field Reports (.csv)"]
-    Overview -->|"15s Live Poll Detects New Scan"| Bell["Notification Bell Badge + Recent District Alerts Popover"]
+    Overview -->|"Download report"| CSV["Export Live Threats & Field Reports (.csv)"]
+    Overview -->|"20s Live Poll Detects New Scan"| Bell["Notification Bell Badge + Recent District Alerts Popover"]
 
     Reports -->|"Select District"| ServerFilter["GET /scans?district=Name&limit=200"]
-    Overview -->|"Settings Tab"| Settings["Surveillance Settings: Switch Cloud Run / LAN API URL & Health Test"]
+    Overview -->|"Settings Tab"| Settings["Surveillance Settings: API URL Override & Live Health Test"]
 ```
 
 ---
@@ -158,25 +158,23 @@ eagles-eye/
 │   ├── app.py                      # Flask routes: GET /, POST /diagnose, GET /scans
 │   ├── db.py                       # Firestore persistence + automatic in-memory fallback
 │   ├── districts.py                # 54 Ugandan district centres & input sanitization
-│   ├── seed_firestore.py           # Demo outbreak seeder (--clear safe cleanup)
-│   ├── Dockerfile                  # Production Gunicorn container for Google Cloud Run
+│   ├── seed_firestore.py           # Optional Firestore utility (--clear safe cleanup)
+│   ├── Dockerfile                  # Production Gunicorn container
 │   ├── requirements.txt            # Python backend dependencies
 │   └── .env.example                # Environment variable template
-├── clients/                        # Pure HTML, CSS & Vanilla JS client applications
+├── clients/                        # Pure HTML, CSS & Vanilla JS client applications (Zero Mock Data)
 │   ├── farmer-app/                 # Farmer Mobile PWA (Deborah)
-│   │   ├── index.html              # 5-screen mobile UI + agro-dealer & tips sheets
+│   │   ├── index.html              # 5-screen mobile UI + hardware camera input + sheets
 │   │   ├── style.css               # Responsive tokens (100dvh, safe-area, landscape mode)
-│   │   ├── app.js                  # POST /diagnose, GET /scans, Luganda i18n, TTS, Uganda map
+│   │   ├── app.js                  # Live Render POST /diagnose, GET /scans?limit=50, Luganda TTS, Uganda map
 │   │   ├── manifest.json           # Installable PWA manifest
-│   │   ├── sw.js                   # Offline app-shell Service Worker (eagles-eye-v5)
-│   │   ├── mock_data.json          # Contract-aligned offline diagnosis fallback cases
-│   │   └── assets/                 # Local crop sample imagery & app icon
+│   │   ├── sw.js                   # Offline app-shell Service Worker (eagles-eye-v6)
+│   │   └── assets/                 # App icon (logo.png)
 │   └── dashboard/                  # Extension Officer Surveillance Dashboard (Odriann)
 │       ├── index.html              # Responsive sidebar/top-nav dashboard layout
 │       ├── style.css               # 5-breakpoint responsive layout (desktop -> 320px mobile)
-│       ├── script.js               # Live KPIs, Uganda heat map, Top Threats, CSV, 15s sync
-│       ├── seed_data.json          # Offline fallback outbreak records
-│       └── assets/                 # Brand logo asset
+│       ├── script.js               # Live Render/Firestore KPIs, Uganda heat map, Top Threats, CSV, 20s sync
+│       └── assets/                 # Brand logo asset (logo.png)
 ├── shared/
 │   └── assets/logo.png             # Single source of truth brand mark
 ├── data/
@@ -245,13 +243,13 @@ python app.py
 ```bash
 python -m http.server 3000 -d clients/farmer-app
 ```
-Open `http://localhost:3000` (or `http://<your-lan-ip>:3000` from a mobile phone on the same Wi-Fi — both apps automatically resolve `<hostname>:8080`, or accept `?api=https://your-cloud-run-url.run.app`).
+Open `http://localhost:3000`. By default, `clients/farmer-app/app.js` connects directly to the live Render deployment (`https://eagles-eye-t8td.onrender.com`).
 
 ### 3. Launch the Surveillance Dashboard (`:3001`)
 ```bash
 python -m http.server 3001 -d clients/dashboard
 ```
-Open `http://localhost:3001` to monitor live farmer scans, filter regional outbreaks, export CSV reports, or configure a remote Cloud Run API URL under **Settings**.
+Open `http://localhost:3001` to monitor live farmer scans from `https://eagles-eye-t8td.onrender.com` & Firestore, filter regional outbreaks, export CSV reports, or point to a local backend URL under **Settings** (`?api=http://localhost:8080`).
 
 ---
 
