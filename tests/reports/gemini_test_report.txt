@@ -1,0 +1,242 @@
+EAGLES EYE — GEMINI CROP DIAGNOSIS TEST REPORT
+==========================================================
+Run time: 2026-10-27T17:33:13+03:00
+Endpoint: http://127.0.0.1:8080/diagnose
+Images tested: 15
+Successful responses: 12
+Failed requests: 3
+Manual review required: 4
+Health-status mismatches: 0
+
+NOTE: Dataset labels are reference labels, not guaranteed ground truth.
+Disease-name matches are preliminary; review predictions manually.
+Confidence values are model-reported, not independently calibrated.
+
+----------------------------------------------------------
+TEST 1: tomato_01.jpg
+HTTP status: 200
+Result: HEALTH STATUS MATCH
+Expected crop: Tomato
+Expected disease: healthy
+Expected healthy: True
+Gemini crop: Tomato
+Gemini condition: Healthy
+Gemini confidence: 0.85
+Gemini severity: none
+Gemini is_healthy: True
+Advice: The tomato leaves appear green and healthy with no visible signs of disease, pests, or nutrient deficiencies. Continue monitoring your crop and maintain good farm management practices.
+Luganda advice: Ebibajja by'enyanya birabika bulungi era nga biragala naye tebirina bubonero bwonna bw'endwadde, ebiwuka oba okubula kw'ebiriisa. Genda maaso n'okulinda ekisimbe kyo era omuzeamu okussa mu nkola ennungi ez'okulima.
+
+----------------------------------------------------------
+TEST 2: tomato_02.jpg
+HTTP status: 200
+Result: HEALTH STATUS MATCH
+Expected crop: Tomato
+Expected disease: healthy
+Expected healthy: True
+Gemini crop: Tomato
+Gemini condition: Healthy
+Gemini confidence: 0.85
+Gemini severity: none
+Gemini is_healthy: True
+Advice: The tomato leaves appear green and healthy with no visible signs of disease or pest damage. Continue with good farm management practices and monitor your crops regularly.
+Luganda advice: Emidigi n'ebikoola by'ennyaanya birabika bulungi era birina langi ennungi awatali bubonero bwa ndwadde oba buwuka bwonna. Genda maaso n'okulima bulungi era oleme okusuubula okulinda n'okulondoola ennimiro yo buli kiseera.
+
+----------------------------------------------------------
+TEST 3: tomato_03.jpg
+HTTP status: 502
+Result: REQUEST FAILED
+Expected crop: Tomato
+Expected disease: healthy
+Expected healthy: True
+Gemini crop: 
+Gemini condition: 
+Gemini confidence: 
+Gemini severity: 
+Gemini is_healthy: None
+Advice: 
+Luganda advice: 
+Error: {"message": "The AI service returned an invalid diagnosis. Please try again.", "status": "error"}
+
+----------------------------------------------------------
+TEST 4: tomato_04.jpg
+HTTP status: 200
+Result: MANUAL REVIEW
+Expected crop: Tomato
+Expected disease: bacterial spot
+Expected healthy: False
+Gemini crop: Tomato
+Gemini condition: Early Blight or Nutrient Deficiency
+Gemini confidence: 0.75
+Gemini severity: moderate
+Gemini is_healthy: False
+Advice: The tomato leaves show marginal yellowing and brown necrosis, which could indicate early blight or a nutrient deficiency. Remove heavily affected leaves to prevent spread, avoid overhead watering, and consult a local agricultural extension worker for confirmation before applying treatments.
+Luganda advice: Ebibajja eby'enyanya birina ekyenvu ku nkinga n'obutundutundu obwa bulaafu, ekisobola okulumya okulwala oba okubulwa kw'ebiriisa. Ggyawo ebifaananyi ebikoseddwa ennyo okuziyiza okusaasaana, ewewale okufukirira amazzi waggulu ku bifaananyi, era tunyonyola omukozi w'eby'enjala ow'omu kitundu okukakasa nga tonnatandika ddagala.
+
+----------------------------------------------------------
+TEST 5: tomato_05.jpg
+HTTP status: 200
+Result: POSSIBLE DISEASE MATCH
+Expected crop: Tomato
+Expected disease: early blight
+Expected healthy: False
+Gemini crop: Tomato
+Gemini condition: Early Blight
+Gemini confidence: 0.85
+Gemini severity: high
+Gemini is_healthy: False
+Advice: The tomato leaves show dark spots with concentric rings and yellowing tissue, which are typical signs of early blight. Remove and destroy heavily infected leaves to prevent spread, avoid overhead watering to keep leaves dry, and practice crop rotation. Consult a local agricultural extension worker for safe fungicide recommendations if needed.
+Luganda advice: Ebikoola by'ennyanya birina obonooto obw'omubala n'okukyuka okw'ekika ky'akyenvu, ebiraga obulwadde bw'ebizimba. Ggyawo ebikoola ebirwadde nnyo obissewo okuziyiza okusaasaanya, yewale okufukirira waggulu okukuuma ebikoola nga bikalu, era kola enkyukakyuka y'ebimerero. Kubiriza omukozi w'ebyobulimi ow'oku kyalo okukusaba eddagala erituufu.
+
+----------------------------------------------------------
+TEST 6: tomato_06.jpg
+HTTP status: 200
+Result: POSSIBLE DISEASE MATCH
+Expected crop: Tomato
+Expected disease: late blight
+Expected healthy: False
+Gemini crop: Tomato
+Gemini condition: Late Blight
+Gemini confidence: 0.85
+Gemini severity: high
+Gemini is_healthy: False
+Advice: The tomato leaf shows water-soaked lesions with white fungal growth on the underside, which strongly suggests Late Blight. Remove and destroy infected plant parts immediately to prevent spreading, avoid overhead watering, and consult your local extension worker for safe fungicide options.
+Luganda advice: Akabenje k'enyanya kalaga ebiwundu ebisingiramu amazzi n'okuzimba okwera wansi, ekiraga nti wandibanga n'obulwadde bw'akabenje (Late Blight). Ggyawo ebikaata ebifu obutasasaanya bulwadde, ewemba okufukirira waggulu, era tubuuze abakugu mu kitundu kwo okufuna eddagala erikuumi.
+
+----------------------------------------------------------
+TEST 7: tomato_07.jpg
+HTTP status: 200
+Result: POSSIBLE DISEASE MATCH
+Expected crop: Tomato
+Expected disease: mold
+Expected healthy: False
+Gemini crop: Tomato
+Gemini condition: Late Blight or Leaf Mold
+Gemini confidence: 0.75
+Gemini severity: moderate
+Gemini is_healthy: False
+Advice: The tomato leaf shows dark, water-soaked spots with possible mold development underneath, which may indicate a fungal disease like late blight or leaf mold. Remove heavily affected leaves to prevent spreading, avoid overhead watering, and consult a local agricultural extension officer for safe fungicide recommendations.
+Luganda advice: Akati k'enyanya kalina ebikovu ebyeruufu oba eby'omubala n'obubonero bw'obuvu wansi, ekiyinza okuba obulwadde bw'obutikitiki. Ggyawo ebikovu ebibisi ennyo okuziyiza okusaasaana, yeevoyoka okufukirira waggulu, era tuukirira omukozi w'eby'obulimi ow'oku kyalo okufuna amagezi ku ddagala erisaanira.
+
+----------------------------------------------------------
+TEST 8: tomato_08.jpg
+HTTP status: 200
+Result: POSSIBLE DISEASE MATCH
+Expected crop: Tomato
+Expected disease: mosaic virus
+Expected healthy: False
+Gemini crop: Tomato
+Gemini condition: Tomato mosaic virus
+Gemini confidence: 0.85
+Gemini severity: moderate
+Gemini is_healthy: False
+Advice: The leaves show yellow mottling and distortion typical of a viral infection, such as Tomato mosaic virus. Remove and destroy heavily infected plants to prevent spread, wash your hands and tools frequently after handling plants, and avoid smoking near tomatoes as tobacco mosaic virus can spread to crops.
+Luganda advice: Ebikoola birina obubonero bw'okukyakyama n'okufuuka eby'akasaayi ekijuliza obulwadde bw'obutimba. Ggyawo ebimera ebifuuye ennyo obiteke wala okuziyiza okusaasaana, lina emikono n'ebikozesebwa buli luvannyuma lw'okukwata ebimera, era yiye okunywa ssikaala okumpi n'ennyaanya kubanga obulwadde busobola okusaasaana.
+
+----------------------------------------------------------
+TEST 9: tomato_09.jpg
+HTTP status: 502
+Result: REQUEST FAILED
+Expected crop: Tomato
+Expected disease: septoria leaf spot
+Expected healthy: False
+Gemini crop: 
+Gemini condition: 
+Gemini confidence: 
+Gemini severity: 
+Gemini is_healthy: None
+Advice: 
+Luganda advice: 
+Error: {"message": "The AI service returned an invalid diagnosis. Please try again.", "status": "error"}
+
+----------------------------------------------------------
+TEST 10: tomato_10.jpg
+HTTP status: 200
+Result: MANUAL REVIEW
+Expected crop: Tomato
+Expected disease: two spotted spider mites
+Expected healthy: False
+Gemini crop: Tomato
+Gemini condition: Multiple leaf diseases and pests (reference collage)
+Gemini confidence: 0.85
+Gemini severity: moderate
+Gemini is_healthy: False
+Advice: This image shows a reference guide for common tomato issues such as bacterial spot, bacterial speck, early blight, and mite damage. Inspect your tomato plants closely to compare symptoms. Remove severely affected leaves, avoid overhead watering to reduce spreading, and consult a local agricultural extension worker for proper treatment.
+Luganda advice: Ekifaananyi kino kiraga obubonero bw'endwadde n'obuwuka obuluma ennyaanya ng'obutonnyeze bw'ebibala, obulwadde bw'ebibala, n'obulabe bw'obuluvu. Kebera ennyaanya zo n'obwegendereza okugeraageranya obubonero. Ggyawo ebikoola ebirwadde nnyo, yeenjenge okufukirira waggulu ku bikoola okuziyiza okusaasaana, era beera n'omukugu w'eby'obulimi mu kitundu kwo.
+
+----------------------------------------------------------
+TEST 11: tomato_11.jpg
+HTTP status: 200
+Result: MANUAL REVIEW
+Expected crop: Tomato
+Expected disease: yellow virus
+Expected healthy: False
+Gemini crop: Tomato
+Gemini condition: Nutrient Deficiency or Viral Infection
+Gemini confidence: 0.65
+Gemini severity: moderate
+Gemini is_healthy: False
+Advice: The tomato leaves show yellowing between the veins (interveinal chlorosis) and some curling. This can be caused by nutrient deficiencies like magnesium or nitrogen, or potentially a viral disease such as Tomato Yellow Leaf Curl Virus. Monitor your plants closely, ensure proper watering and soil nutrition, and consult a local agricultural extension officer for confirmation.
+Luganda advice: Ebibajja by'enyanya biraga okukyuka okuba ekyenvu wakati w'emisuwa n'okunyigirizibwa. Kino kisobola okuva ku kubula kw'ebisaera mu ttaka oba obulwadde bw'akayayauka. Laba ennimiro yo bulungi, kakasa nti owa amazi n'ebisaera ebisaanira, era kozesa omumyuka w'eby'obulimi ow'oku kyalo okukakasa.
+
+----------------------------------------------------------
+TEST 12: tomato_12.jpg
+HTTP status: 200
+Result: POSSIBLE DISEASE MATCH
+Expected crop: Tomato
+Expected disease: early blight
+Expected healthy: False
+Gemini crop: Tomato
+Gemini condition: Early Blight or Septoria Leaf Spot
+Gemini confidence: 0.82
+Gemini severity: high
+Gemini is_healthy: False
+Advice: The tomato leaves show dark target-like spots surrounded by yellowing and extensive drying. This resembles fungal diseases such as Early Blight or Septoria leaf spot. Remove and destroy heavily infected leaves, avoid overhead watering to reduce moisture on leaves, and ensure proper spacing between plants for good airflow.
+Luganda advice: Ebibajja by'enyanya birina obubonero bw'ebitonyi ebifuufu ebyetooloddwa enjawulo ey'omusinga n'okukaluwa. Kino kifaanana n'endwadde y'obulwadde bw'ekitibwa oba obubajja bw'ebikoola. Ggyawo ebikoola ebifunse n'okubyokya, yewale okufukirira ku bikoola waggulu, era ossawo ebbanga wakati w'ebisimba okulabirira omuyaga omulungi.
+
+----------------------------------------------------------
+TEST 13: corn_13.jpg
+HTTP status: 200
+Result: MANUAL REVIEW
+Expected crop: Corn
+Expected disease: gray leaf spot
+Expected healthy: False
+Gemini crop: Maize
+Gemini condition: Northern Corn Leaf Blight
+Gemini confidence: 0.85
+Gemini severity: low
+Gemini is_healthy: False
+Advice: Monitor your maize field closely. The elongated grayish-tan lesion visible on the leaf resembles Northern Corn Leaf Blight. Practice crop rotation and clear out crop debris after harvest to reduce fungal spores. If damage spreads, consult a local agricultural extension officer.
+Luganda advice: Laba engo z'ebisimba byo obulungi. Ebiwundu ebifuufuule ebiri ku bulagala birabika nga obulwadde bwa Northern Corn Leaf Blight. Kyusa ebisimba mu nnimiro buli mwaka era oyoke oba ozikirize ebisaasira by'ebisimba nga otebye. Singa obulwadde bweyongera, wegatte ku omukungu w'ebyobulimi mu kitundu kyo.
+
+----------------------------------------------------------
+TEST 14: corn_14.jpg
+HTTP status: 200
+Result: POSSIBLE DISEASE MATCH
+Expected crop: Corn
+Expected disease: leaf blight
+Expected healthy: False
+Gemini crop: Maize
+Gemini condition: Northern Corn Leaf Blight
+Gemini confidence: 0.85
+Gemini severity: moderate
+Gemini is_healthy: False
+Advice: The maize leaf shows long, cigar-shaped gray-green or tan lesions, which are characteristic of Northern Corn Leaf Blight. Monitor your field and consider clearing severely affected crop debris after harvest to reduce future infection.
+Luganda advice: Akawempe k'omusaka kuliko ebiwundu ebireefu eby'ekirovu oba ekyenvu, nga bino biraga obulwadde bw'omusaka obwa Northern Corn Leaf Blight. Kebera omusaka gwo era oteekateeke okukungula n'okusaanyawo ebikoola ebyonoonese ennyo oluvannyuma lw'okukungula okuziyiza obulwadde obw'omu maaso.
+
+----------------------------------------------------------
+TEST 15: corn_15.jpg
+HTTP status: 502
+Result: REQUEST FAILED
+Expected crop: Corn
+Expected disease: rust
+Expected healthy: False
+Gemini crop: 
+Gemini condition: 
+Gemini confidence: 
+Gemini severity: 
+Gemini is_healthy: None
+Advice: 
+Luganda advice: 
+Error: {"message": "The AI service returned an invalid diagnosis. Please try again.", "status": "error"}
+

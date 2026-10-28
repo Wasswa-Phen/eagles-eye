@@ -20,21 +20,32 @@ Smallholder farmers across Uganda lose an estimated **35–40% of their crop yie
 
 ```
 eagles-eye/
-├── docs/                      # Architectural specs, API schemas & guidelines
-│   ├── DATA_CONTRACT.md       # Agreed JSON data contract between services
-│   └── ai-contract.md         # AI prompt engineering & Gemini guidelines
 ├── backend/                   # Python Flask API + Gemini + Firestore (Derek & Lyazi)
-│   ├── app.py                 # Barebones Flask server with CORS & stub routes
+│   ├── app.py                 # Flask server with CORS & Gemini endpoints
 │   ├── requirements.txt       # Python dependencies
 │   └── .env.example           # Environment variable template
-├── frontend/                  # Farmer-facing mobile web interface (Deborah)
-│   ├── index.html             # HTML5 starter interface referencing Figma wireframes
-│   └── mock_data.json         # Static mock diagnosis data matching the contract
-├── dashboard/                 # Outbreak surveillance & heat map dashboard (Odriann)
-│   ├── index.html             # Dashboard starter interface with Google Maps placeholder
-│   └── seed_data.json         # 3 mock outbreak records (Masaka, Mukono, Mbale)
-└── data/
-    └── sample_crops/          # Test imagery for crops (Banana, Coffee, Cassava, Maize)
+├── clients/                   # Unified client applications
+│   ├── farmer-app/            # Farmer PWA mobile interface (Deborah)
+│   │   ├── index.html         # Responsive mobile UI matching Figma
+│   │   ├── style.css          # Design system, themes & animations
+│   │   ├── app.js             # State, camera, TTS voice & fallback logic
+│   │   ├── manifest.json      # PWA installability manifest
+│   │   ├── sw.js              # Offline service worker
+│   │   └── mock_data.json     # Static mock diagnosis data
+│   └── dashboard/             # Surveillance & heat map dashboard (Odriann)
+│       ├── index.html         # Officer outbreak surveillance dashboard
+│       └── seed_data.json     # Mock outbreak records (Masaka, Mukono, Mbale)
+├── shared/                    # Single source of truth for assets
+│   └── assets/
+│       └── logo.png           # Official Eagles Eye leaf-eye brand logo
+├── data/
+│   └── sample_crops/          # Test imagery (banana, cassava, coffee, maize, inconclusive)
+├── docs/                      # Authoritative specifications & team contracts
+│   └── DATA_CONTRACT.md       # Unified JSON schema & AI contract
+└── tests/                     # Automated test suites & reports
+    ├── run_ai_tests.py        # Gemini diagnosis test runner
+    ├── labels.csv             # Ground truth evaluation labels
+    └── reports/               # Test execution reports
 ```
 
 ### Team Roles & Ownership
@@ -44,8 +55,8 @@ eagles-eye/
 | **Stephen Wasswa** | Project Coordinator & Product Lead | Architecture, repo governance, UX & pitch |
 | **Atulinda Derek Solomon** | Backend Engineer | `backend/` (Flask API, endpoints, Firestore integration) |
 | **Lyazi Patrick** | AI & Security Specialist | `backend/` (Gemini API prompt engineering, multimodal analysis) |
-| **Deborah Nzopi** | Frontend Developer | `frontend/` (Farmer PWA, Figma implementation, camera upload, audio) |
-| **Twahirwa Odriann** | Dashboard Developer | `dashboard/` (Surveillance dashboard, Google Maps heat map) |
+| **Deborah Nzopi** | Frontend Developer | `clients/farmer-app/` (Farmer PWA, Figma implementation, camera upload, audio) |
+| **Twahirwa Odriann** | Dashboard Developer | `clients/dashboard/` (Surveillance dashboard, Google Maps heat map) |
 
 ---
 
@@ -87,48 +98,51 @@ python app.py
 ```
 The backend API will start at: `http://localhost:8080`
 - **Health check:** `http://localhost:8080/`
-- **Diagnostics stub:** `http://localhost:8080/diagnose` (POST)
-- **Scans query stub:** `http://localhost:8080/scans` (GET)
+- **Diagnostics endpoint:** `http://localhost:8080/diagnose` (POST)
+- **Scans query endpoint:** `http://localhost:8080/scans` (GET)
 
-### 3. Frontend Development (`frontend/`)
-- Open `frontend/index.html` in your browser, or serve it using a local static server:
+### 3. Farmer PWA Mobile App (`clients/farmer-app/`)
+- Serve the mobile Farmer Progressive Web App:
   ```bash
-  # Using Python http.server
-  cd frontend
+  cd clients/farmer-app
   python -m http.server 3000
   ```
-- Access the farmer app at `http://localhost:3000`. It comes pre-linked with `mock_data.json` for unblocked UI development against Figma designs.
+- Open `http://localhost:3000` in your browser (switch browser DevTools to mobile viewport e.g. iPhone / Pixel).
+- Features live camera viewfinder, test chips, Gemini diagnosis, and Luganda voice advice!
 
-### 4. Surveillance Dashboard (`dashboard/`)
-- Open `dashboard/index.html` in your browser, or serve it:
+### 4. Surveillance Dashboard (`clients/dashboard/`)
+- Serve the surveillance dashboard:
   ```bash
-  cd dashboard
+  cd clients/dashboard
   python -m http.server 3001
   ```
-- Access the extension officer heat map at `http://localhost:3001`. It reads sample outbreak records from `seed_data.json`.
+- Open `http://localhost:3001` in your browser to inspect regional outbreak heat maps.
 
 ---
 
-## 📜 Data Contract & Schema
+## 📜 Unified Data & AI Contract
 
-All components strictly adhere to the unified JSON schema documented in [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md).
+All services strictly adhere to the unified JSON schema and Gemini safety rules documented in [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md).
 
-Example response payload:
+Example diagnosis response payload:
 ```json
 {
-  "crop": "Cassava",
-  "condition": "Cassava Mosaic Disease (CMD)",
-  "confidence": 0.94,
-  "severity": "high",
-  "is_healthy": false,
-  "advice": "Uproot and destroy infected plants immediately to prevent spread via whiteflies. Use certified disease-free stem cuttings for next planting.",
-  "advice_luganda": "Simbula era oyokye ebirime ebirwadde mangu ddala okuziyiza okusaasaana kw'olukonvuba lwa whiteflies. Kozesa ebiti ebiramu ebyakakasibwa mu kusimba okuddako.",
-  "location": {
-    "district": "Mukono",
-    "latitude": 0.3549,
-    "longitude": 32.7523
-  },
-  "timestamp": "2026-10-26T14:30:00Z"
+  "status": "success",
+  "data": {
+    "crop": "Cassava",
+    "condition": "Cassava Mosaic Disease (CMD)",
+    "confidence": 0.94,
+    "severity": "moderate",
+    "is_healthy": false,
+    "advice": "Cut and safely bury badly affected leaves. Use certified virus-free stem cuttings.",
+    "advice_luganda": "Simbula era oyokye ebirime ebirwadde mangu ddala okuziyiza okusaasaana...",
+    "location": {
+      "district": "Masaka",
+      "latitude": -0.3411,
+      "longitude": 31.7361
+    },
+    "timestamp": "2026-10-26T14:30:00Z"
+  }
 }
 ```
 

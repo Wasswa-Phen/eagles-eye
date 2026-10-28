@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Eagles Eye — Farmer AI Crop Doctor</title>
+  <meta name="description" content="AI Crop Doctor for Ugandan Smallholder Farmers. Spot crop diseases early and receive clear advice in English and Luganda.">
+  <meta name="theme-color" content="#1D5C2B">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Reusable SVG Symbol Definitions -->
+  <svg style="display: none;">
+    <!-- Leaf with Eye Brand Icon -->
+    <symbol id="icon-leaf-eye" viewBox="0 0 100 64">
+      <path d="M12 48 C 2 32, 18 10, 52 8 C 84 6, 96 28, 92 42 C 86 56, 62 60, 38 58 C 22 56, 16 54, 12 48 Z" fill="#1D5C2B"/>
+      <path d="M30 33 C 38 23, 62 23, 70 33 C 62 43, 38 43, 30 33 Z" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <circle cx="50" cy="33" r="5" fill="#FFFFFF"/>
+    </symbol>
+
+    <!-- Shield Check Icon -->
+    <symbol id="icon-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      <path d="m9 12 2 2 4-4"/>
+    </symbol>
+
+    <!-- Back Arrow Icon -->
+    <symbol id="icon-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m15 18-6-6 6-6"/>
+    </symbol>
+
+    <!-- Bell Icon -->
+    <symbol id="icon-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </symbol>
+
+    <!-- Leaf Outline Accent -->
+    <symbol id="icon-leaf-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+      <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+    </symbol>
+
+    <!-- Gallery Icon -->
+    <symbol id="icon-gallery" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+      <circle cx="9" cy="9" r="2"/>
+      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+    </symbol>
+
+    <!-- Clock Icon -->
+    <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </symbol>
+
+    <!-- Location Pin -->
+    <symbol id="icon-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </symbol>
+  </svg>
+
+  <main id="app-container">
+
+    <!-- =========================================================================
+         SCREEN 1: LANDING SCREEN (Figma Screenshot 2026-10-26 195819)
+         ========================================================================= -->
+    <section id="screen-landing" class="screen active" aria-label="Welcome Landing Screen">
+      <!-- Background Leaf Accents -->
+      <svg class="bg-leaf-accent bg-leaf-1" style="color: #B8DBB3;"><use href="#icon-leaf-outline"/></svg>
+      <svg class="bg-leaf-accent bg-leaf-2" style="color: #B8DBB3;"><use href="#icon-leaf-outline"/></svg>
+
+      <div class="landing-hero">
+        <!-- Floating Brand Card -->
+        <div class="brand-hero-card">
+          <img src="assets/logo.png" alt="Eagles Eye" class="brand-hero-logo">
+        </div>
+
+        <!-- Trusted Crop Guidance Badge -->
+        <div class="trusted-badge">
+          <svg><use href="#icon-shield-check"/></svg>
+          <span id="txt-badge-trusted">TRUSTED CROP GUIDANCE</span>
+        </div>
+
+        <!-- Main Hero Title & Subtitle -->
+        <h1 class="landing-title" id="txt-hero-title">Your crop doctor in your pocket</h1>
+        <p class="landing-subtitle" id="txt-hero-subtitle">Spot crop problems early and get simple, practical advice in seconds.</p>
+
+        <!-- Language Selector Segmented Pill -->
+        <div class="language-selector-wrapper">
+          <div class="segmented-pill" role="radiogroup" aria-label="Select Language">
+            <button class="segmented-btn active" id="btn-lang-en" type="button" aria-checked="true">English</button>
+            <button class="segmented-btn" id="btn-lang-lg" type="button" aria-checked="false">Luganda</button>
+          </div>
+        </div>
+
+        <!-- District Selector -->
+        <div class="district-selector-box">
+          <svg style="width: 18px; height: 18px; color: var(--primary);"><use href="#icon-pin"/></svg>
+          <label for="select-district" id="txt-label-district">District:</label>
+          <select id="select-district" aria-label="Select Ugandan District">
+            <option value="Masaka" selected>Masaka</option>
+            <option value="Mukono">Mukono</option>
+            <option value="Mbale">Mbale</option>
+            <option value="Mbarara">Mbarara</option>
+            <option value="Gulu">Gulu</option>
+            <option value="Wakiso">Wakiso</option>
+            <option value="Iganga">Iganga</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Landing Actions & Footer -->
+      <div class="landing-bottom-actions">
+        <button class="btn-primary-start" id="btn-start" type="button">
+          <span id="txt-btn-start">Start</span>
+          <span>→</span>
+        </button>
+
+        <div style="text-align: center;">
+          <button class="history-link-btn" id="btn-open-history" type="button">
+            <svg style="width: 17px; height: 17px;"><use href="#icon-clock"/></svg>
+            <span id="txt-link-history">View scan history</span>
+          </button>
+        </div>
+
+        <p class="microcopy-footer" id="txt-microcopy">Works with low data • Advice in your language</p>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SCREEN 2: CAMERA CAPTURE & VIEWFINDER VIEW (Figma Screenshot 2026-10-26 195907)
+         ========================================================================= -->
+    <section id="screen-camera" class="screen" aria-label="Camera Leaf Scanner">
+      <!-- Top Navigation -->
+      <nav class="top-nav camera-nav">
+        <button class="nav-btn" id="btn-cam-back" aria-label="Back to Home">
+          <svg style="width: 20px; height: 20px;"><use href="#icon-arrow-left"/></svg>
+        </button>
+
+        <div class="camera-instruction-pill">
+          <div class="leaf-icon-circle">
+            <svg style="width: 16px; height: 16px; color: #FFFFFF;"><use href="#icon-leaf-outline"/></svg>
+          </div>
+          <span id="txt-cam-instruction">Take a clear photo of the sick leaf</span>
+        </div>
+
+        <button class="nav-btn" id="btn-cam-alert" aria-label="Crop Alerts">
+          <svg style="width: 20px; height: 20px;"><use href="#icon-bell"/></svg>
+        </button>
+      </nav>
+
+      <!-- Viewfinder Area -->
+      <div class="viewfinder-viewport">
+        <!-- Live Video (when camera is granted) -->
+        <video id="camera-video" autoplay playsinline style="display: none;"></video>
+        <!-- Static/Demo Fallback Background -->
+        <div id="camera-sim-canvas" class="camera-sim-bg"></div>
+      </div>
+
+      <!-- Reticle and Framing Guides -->
+      <div class="camera-guide-overlay">
+        <div class="oval-leaf-reticle">
+          <div class="bracket-corner bracket-tl"></div>
+          <div class="bracket-corner bracket-br"></div>
+          <span id="txt-reticle-guide">Place leaf here</span>
+        </div>
+      </div>
+
+      <!-- Quick Demo Chips Bar (Hackathon Evaluation) -->
+      <div class="demo-chips-container">
+        <div class="demo-chips-title" id="txt-demo-title">⚡ Hackathon Test Samples</div>
+        <div class="demo-chips-scroll">
+          <button class="demo-chip active" id="chip-sample-cassava" type="button">
+            🍃 Sample 1: Cassava Mosaic (Masaka)
+          </button>
+          <button class="demo-chip" id="chip-sample-banana" type="button">
+            🍌 Sample 2: Banana Bacterial Wilt (Mukono)
+          </button>
+          <button class="demo-chip" id="chip-sample-maize" type="button">
+            🌽 Sample 3: Healthy Maize (Iganga)
+          </button>
+        </div>
+      </div>
+
+      <!-- Bottom Controls -->
+      <div class="camera-bottom-toolbar">
+        <button class="gallery-action-btn" id="btn-open-gallery" type="button">
+          <svg><use href="#icon-gallery"/></svg>
+          <span id="txt-gallery-label">Gallery</span>
+        </button>
+
+        <button class="shutter-btn-outer" id="btn-shutter-capture" type="button" aria-label="Capture leaf and diagnose">
+          <div class="shutter-btn-inner">📷</div>
+        </button>
+
+        <div style="width: 48px;"></div> <!-- Balancer spacing -->
+      </div>
+
+      <!-- Hidden Native File Input -->
+      <input type="file" id="file-input" accept="image/*" capture="environment">
+    </section>
+
+    <!-- =========================================================================
+         SCREEN 3: DIAGNOSIS RESULTS CARD (Figma Screenshot 2026-10-26 200057)
+         ========================================================================= -->
+    <section id="screen-results" class="screen" aria-label="Diagnosis Results">
+      <!-- Top Navigation -->
+      <nav class="top-nav">
+        <button class="nav-btn" id="btn-results-back" aria-label="Back to Camera">
+          <svg style="width: 20px; height: 20px;"><use href="#icon-arrow-left"/></svg>
+        </button>
+        <div class="nav-center-title" id="txt-results-header">Diagnosis</div>
+        <button class="nav-btn" id="btn-results-alert" aria-label="View Outbreak Alert">
+          <svg style="width: 20px; height: 20px;"><use href="#icon-bell"/></svg>
+        </button>
+      </nav>
+
+      <div class="results-content-stack">
+        <!-- Hero Condition Card -->
+        <article class="diag-hero-card">
+          <div class="diag-crop-header-row">
+            <img id="res-thumbnail" src="assets/cassava_mosaic.jpg" alt="Diagnosed leaf" class="diag-leaf-thumbnail">
+            <div class="diag-crop-details">
+              <div class="crop-category-badge" id="res-crop-name">CASSAVA</div>
+              <h2 class="condition-title" id="res-condition-title">Cassava mosaic disease</h2>
+              <div class="confidence-pill" id="res-confidence-pill">
+                <span>✓</span> <span id="res-confidence-text">High confidence (94%)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Severity Section -->
+          <div class="severity-box">
+            <div class="severity-row">
+              <span class="severity-label" id="txt-lbl-severity">Severity</span>
+              <span class="severity-value" id="res-severity-value">Moderate</span>
+            </div>
+            <div class="severity-progress-track">
+              <div class="severity-progress-bar" id="res-severity-bar"></div>
+            </div>
+            <p class="severity-caption" id="res-severity-caption">Act soon to protect the rest of your field.</p>
+          </div>
+        </article>
+
+        <!-- 3 Simple Steps Treatment Card -->
+        <article class="treatment-section-card">
+          <div class="steps-header-row">
+            <div>
+              <div class="steps-kicker" id="txt-kicker-steps">3 SIMPLE STEPS</div>
+              <h3 class="steps-title" id="txt-title-steps">What to do now</h3>
+            </div>
+            <span class="steps-count-badge">1–3</span>
+          </div>
+
+          <div class="steps-list" id="res-steps-container">
+            <!-- Dynamic steps populated via JS -->
+            <div class="step-item">
+              <div class="step-number-circle">1</div>
+              <div class="step-content">
+                <div class="step-headline">Remove affected leaves</div>
+                <div class="step-description">Cut and safely bury badly affected leaves.</div>
+              </div>
+              <div class="step-check-icon">✓</div>
+            </div>
+            <div class="step-item">
+              <div class="step-number-circle">2</div>
+              <div class="step-content">
+                <div class="step-headline">Use clean planting material</div>
+                <div class="step-description">Do not replant stems from sick crops.</div>
+              </div>
+              <div class="step-check-icon">✓</div>
+            </div>
+            <div class="step-item">
+              <div class="step-number-circle">3</div>
+              <div class="step-content">
+                <div class="step-headline">Control whiteflies</div>
+                <div class="step-description">Ask for an approved treatment at your agro-dealer.</div>
+              </div>
+              <div class="step-check-icon">✓</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Audio Guidance Button -->
+        <button class="btn-listen-audio" id="btn-audio-listen" type="button">
+          <span style="font-size: 1.2rem;">🔊</span>
+          <span id="txt-btn-audio">Listen to advice</span>
+          <div class="sound-waves">
+            <div class="sound-bar"></div>
+            <div class="sound-bar"></div>
+            <div class="sound-bar"></div>
+            <div class="sound-bar"></div>
+          </div>
+        </button>
+
+        <!-- Agro-Dealer & Nearby Alert CTA Buttons -->
+        <button class="btn-find-dealer" id="btn-open-dealers" type="button">
+          <svg style="width: 18px; height: 18px;"><use href="#icon-pin"/></svg>
+          <span id="txt-btn-dealers">Find nearest agro-dealer</span>
+        </button>
+
+        <button class="btn-nearby-alert-banner" id="btn-trigger-alert-screen" type="button">
+          <svg style="width: 18px; height: 18px;"><use href="#icon-bell"/></svg>
+          <span id="txt-btn-nearby-alert">View nearby crop alert &gt;</span>
+        </button>
+
+        <button class="btn-scan-another" id="btn-scan-again-from-results" type="button" style="margin-top: 4px;">
+          <span>📷</span> <span id="txt-btn-scan-again">Scan another crop</span>
+        </button>
+
+        <!-- Advisory Disclaimer -->
+        <div class="advisory-disclaimer-note">
+          <svg style="width: 14px; height: 14px; color: var(--text-muted);"><use href="#icon-shield-check"/></svg>
+          <span id="txt-disclaimer">Advisory only. Confirm with your extension officer.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SCREEN 4: NEARBY CROP ALERT VIEW (Figma Screenshot 2026-10-26 200155)
+         ========================================================================= -->
+    <section id="screen-alert" class="screen" aria-label="Nearby Crop Outbreak Alert">
+      <nav class="top-nav">
+        <button class="nav-btn" id="btn-alert-back" aria-label="Back">
+          <svg style="width: 20px; height: 20px;"><use href="#icon-arrow-left"/></svg>
+        </button>
+        <div class="nav-center-title" id="txt-alert-header">Outbreak Alert</div>
+        <button class="nav-btn" aria-label="Notifications">
+          <svg style="width: 20px; height: 20px;"><use href="#icon-bell"/></svg>
+        </button>
+      </nav>
+
+      <div class="alert-content-stack">
+        <!-- Peach Warning Banner -->
+        <article class="nearby-warning-card">
+          <div class="warning-icon-box">🔔</div>
+          <div>
+            <div class="warning-header-kicker" id="txt-kicker-farm">NEAR YOUR FARM</div>
+            <div class="warning-headline" id="txt-headline-armyworm">Fall armyworm confirmed <span>8 km</span> from you</div>
+          </div>
+        </article>
+
+        <!-- Radar Map Visual -->
+        <div class="radar-map-card">
+          <svg class="vector-map-roads" viewBox="0 0 320 200" fill="none" preserveAspectRatio="none">
+            <!-- Stylized Country Roads -->
+            <path d="M-10 120 C 60 110, 100 130, 200 80 C 260 50, 290 60, 340 70" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+            <path d="M70 -10 C 80 80, 90 140, 120 220" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+            <path d="M220 -10 C 210 60, 230 150, 260 220" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+          </svg>
+
+          <!-- Radar Pulse -->
+          <div class="radar-pulse-ring"></div>
+
+          <!-- Map Pins -->
+          <div class="map-location-pin pin-farm">
+            <div class="dot"></div>
+            <span id="txt-pin-farm">Your farm</span>
+          </div>
+
+          <div class="map-location-pin pin-pest">
+            <div class="dot"></div>
+            <span id="txt-pin-pest">Armyworm<br>8 km away</span>
+          </div>
+        </div>
+
+        <!-- Protect Maize Advisory Card -->
+        <article class="protection-advisory-card">
+          <h3 class="protection-title" id="txt-title-protect">Protect your maize now</h3>
+          <p class="protection-subtitle" id="txt-desc-protect">Check the funnel of young maize plants for holes, sawdust-like waste, or caterpillars.</p>
+          <button class="btn-prevention-tips" id="btn-see-tips" type="button">See prevention tips</button>
+          <div class="alert-update-timestamp" id="txt-timestamp-update">● Updated today at 8:30 AM</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SCREEN 5: PAST SCANS / FARM RECORD (Figma Screenshot 2026-10-26 200125)
+         ========================================================================= -->
+    <section id="screen-history" class="screen" aria-label="Past Crop Scans">
+      <nav class="top-nav">
+        <button class="nav-btn" id="btn-history-back" aria-label="Back">
+          <svg style="width: 20px; height: 20px;"><use href="#icon-arrow-left"/></svg>
+        </button>
+        <div class="nav-center-title" id="txt-history-nav">Records</div>
+        <button class="nav-btn" aria-label="Notifications">
+          <svg style="width: 20px; height: 20px;"><use href="#icon-bell"/></svg>
+        </button>
+      </nav>
+
+      <div class="history-content-container">
+        <div class="history-header-box">
+          <div class="history-kicker" id="txt-kicker-history">YOUR FARM RECORD</div>
+          <div class="history-title-row">
+            <h2 class="history-title" id="txt-title-history">Past scans</h2>
+            <span class="history-count-pill" id="history-count-badge">4</span>
+          </div>
+        </div>
+
+        <!-- History Scans List -->
+        <div class="history-cards-list" id="history-items-list">
+          <!-- Populated dynamically via app.js -->
+        </div>
+
+        <button class="btn-scan-another" id="btn-history-scan-again" type="button">
+          <span>📷</span> <span id="txt-btn-history-scan">Scan another crop</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         MODAL / BOTTOM SHEET: LOCAL AGRO-DEALERS
+         ========================================================================= -->
+    <div class="modal-backdrop" id="modal-dealers" role="dialog" aria-modal="true" aria-labelledby="modal-dealer-title">
+      <div class="modal-sheet">
+        <div class="modal-handle-bar"></div>
+        <div class="modal-header-row">
+          <h3 class="modal-title" id="modal-dealer-title">Verified Agro-Dealers</h3>
+          <button class="nav-btn" id="btn-close-dealers" aria-label="Close Modal" style="width: 32px; height: 32px;">✕</button>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;" id="txt-dealers-district-note">
+          Approved suppliers for clean seeds, virus-free cuttings, and pest treatments in Masaka:
+        </p>
+
+        <div id="dealers-list-container">
+          <!-- Filled dynamically based on current district -->
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         LOADING / GEMINI INSPECTION OVERLAY
+         ========================================================================= -->
+    <div class="loading-overlay" id="loading-overlay" aria-live="assertive">
+      <div class="pulse-spinner"></div>
+      <div class="loading-title" id="loading-title-text">Inspecting leaf with Gemini...</div>
+      <div class="loading-subtitle" id="loading-subtitle-text">Analyzing foliar patterns, chlorosis, and lesions for smallholder diagnosis.</div>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

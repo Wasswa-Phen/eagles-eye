@@ -1,37 +1,38 @@
-# 🦅 Eagles Eye — Unified Data Contract
+# 🦅 Eagles Eye — Unified Data & AI Contract
 
-> **Version:** 1.0.0 (Pre-DevFest Hackathon 2026)  
+> **Version:** 1.1.0 (Pre-DevFest Hackathon Kampala 2026)  
 > **Author:** Stephen Wasswa (Project Coordinator)  
-> **Stakeholders:** Derek & Lyazi (Backend), Deborah (Frontend), Odriann (Dashboard)  
-> **Status:** Agreed Baseline Schema
+> **Stakeholders:** Derek & Lyazi (Backend & AI), Deborah (Farmer PWA), Odriann (Dashboard)  
+> **Status:** Authoritative Baseline Specification (Consolidated Single Source of Truth)
 
 ---
 
-## 1. Overview & Purpose
+## 1. Overview & Architectural Scope
 
-This document defines the formal data schema exchanged across all subsystems of **Eagles Eye**:
-- **Backend API (`backend/`)**: Produces diagnostic predictions via Gemini and serves persisted scan history from Firestore.
-- **Farmer Web App (`frontend/`)**: Consumes the diagnosis payload to display farmer advisory results and trigger Luganda voice readout.
-- **Surveillance Dashboard (`dashboard/`)**: Consumes historical and aggregated scan records to plot regional outbreak heat maps.
+This document is the sole, authoritative specification governing data schemas, API contracts, AI inference constraints, and security standards across all components of **Eagles Eye**:
+- **Backend API (`backend/`)**: Receives crop photos, orchestrates multimodal Gemini API analysis, logs records to Firestore, and serves outbreak data.
+- **Farmer Web App (`clients/farmer-app/`)**: Responsive mobile PWA enabling smallholder farmers to capture leaf photos, review diagnosis cards, and listen to voice advice in English and Luganda.
+- **Surveillance Dashboard (`clients/dashboard/`)**: Map-based surveillance tool for agricultural extension officers and cooperatives to track regional outbreaks.
+- **Curated Dataset (`data/sample_crops/`)**: Benchmark imagery across target crops (Banana, Cassava, Coffee, Maize) for evaluation.
 
-All components MUST conform to this contract to allow parallel, unblocked development across team members.
+All subsystems MUST adhere to this contract to guarantee seamless interoperability.
 
 ---
 
 ## 2. Core Diagnosis Schema
 
-Each diagnosis record represents a completed crop assessment.
+Each diagnosis record represents an evaluated crop leaf assessment.
 
 ### Field Definitions
 
 | Field | Type | Required | Description / Constraints | Example |
 |---|---|---|---|---|
-| `crop` | `string` | **Yes** | Common name of the recognized crop. Allowed values include: `"Banana / Matooke"`, `"Cassava"`, `"Coffee"`, `"Maize"`, `"Beans"`, `"Tomato"`, `"Unknown"`. | `"Cassava"` |
-| `condition` | `string` | **Yes** | Identified pest, pathogen, deficiency, or `"Healthy"`. If unrecognizable, use `"Unknown"`. | `"Cassava Mosaic Disease (CMD)"` |
+| `crop` | `string` | **Yes** | Common name of the recognized crop. Allowed values: `"Banana / Matooke"`, `"Cassava"`, `"Coffee"`, `"Maize"`, `"Beans"`, `"Tomato"`, `"Unknown"`. | `"Cassava"` |
+| `condition` | `string` | **Yes** | Identified pest, pathogen, deficiency, or `"Healthy Foliage"`. If unrecognizable, use `"Inconclusive Image"`. | `"Cassava Mosaic Disease (CMD)"` |
 | `confidence` | `number` | **Yes** | Qualitative model certainty normalized between `0.00` and `1.00`. | `0.94` |
-| `severity` | `string` | **Yes** | Urgency and damage level. Enum: `"none"`, `"low"`, `"moderate"`, `"high"`. | `"high"` |
+| `severity` | `string` | **Yes** | Urgency and damage level. Enum: `"none"`, `"low"`, `"moderate"`, `"high"`. | `"moderate"` |
 | `is_healthy` | `boolean` | **Yes** | `true` if crop exhibits no disease/pest damage; `false` if condition detected. | `false` |
-| `advice` | `string` | **Yes** | Plain-language, actionable guidance for smallholder farmers in English. | `"Uproot and destroy infected plants immediately. Plant certified disease-free cuttings."` |
+| `advice` | `string` | **Yes** | Plain-language, actionable guidance for smallholder farmers in English. | `"Cut and safely bury badly affected leaves. Use certified virus-free stem cuttings."` |
 | `advice_luganda` | `string` | **Yes** | Contextually translated Luganda guidance suitable for text display and Text-to-Speech (TTS) audio playback. | `"Simbula era oyokye ebirime ebirwadde mangu ddala okuziyiza okusaasaana..."` |
 | `location` | `object` | **Yes** | District-level geographic context for community surveillance. | See Location Object below |
 | `timestamp` | `string` | **Yes** | ISO-8601 UTC timestamp format: `YYYY-MM-DDTHH:MM:SSZ`. | `"2026-10-26T14:30:00Z"` |
@@ -40,9 +41,9 @@ Each diagnosis record represents a completed crop assessment.
 
 | Sub-field | Type | Required | Description | Example |
 |---|---|---|---|---|
-| `district` | `string` | **Yes** | Ugandan administrative district where scan was recorded. | `"Mukono"` |
-| `latitude` | `number` | **Yes** | Decimal coordinate latitude (WGS 84). | `0.3549` |
-| `longitude` | `number` | **Yes** | Decimal coordinate longitude (WGS 84). | `32.7523` |
+| `district` | `string` | **Yes** | Ugandan administrative district where scan was recorded. | `"Masaka"` |
+| `latitude` | `number` | **Yes** | Decimal coordinate latitude (WGS 84). | `-0.3411` |
+| `longitude` | `number` | **Yes** | Decimal coordinate longitude (WGS 84). | `31.7361` |
 
 ---
 
@@ -181,22 +182,52 @@ Health check endpoint.
 
 ---
 
-## 4. Implementation Guidelines by Team Member
+## 4. AI Inference, Prompting, & Uncertainty Rules
 
-- **Derek (Backend Lead):**
-  - Implement request validation for incoming `multipart/form-data` uploads.
-  - Persist valid diagnosis records to Google Cloud Firestore (`scans` collection).
-  - Serve `GET /scans` with appropriate query filtering and pagination.
+1. **Multimodal Analysis**:
+   - The backend passes the validated image bytes directly to Google Gemini (`gemini-2.5-flash` or `gemini-1.5-flash`) using structured JSON mode.
+   - The model must identify: `crop`, `condition`, `confidence`, `severity`, `is_healthy`, `advice`, and `advice_luganda`.
+2. **Metadata Integrity**:
+   - Gemini must NEVER invent coordinates, GPS locations, or timestamps. Geographic coordinates and ISO timestamps are added exclusively by the backend application logic.
+3. **Uncertainty & Inconclusive Handling**:
+   - When an image is blurry, underexposed, or does not clearly display crop foliage, Gemini must return an inconclusive assessment rather than fabricating a false diagnosis.
+   - The response must adopt the `"inconclusive"` status, set `condition` to `"Inconclusive Image"`, and advise the farmer in English and Luganda to capture a clearer, well-lit photo.
+4. **Advisory Framing**:
+   - AI predictions represent preliminary advisory guidance and must always carry the disclaimer: *"Advisory only. Confirm with your local extension officer."*
 
-- **Lyazi (AI & Security):**
-  - Write the Gemini structured prompt (JSON schema mode) enforcing these exact keys.
-  - Formulate natural language advice and accurate Luganda translations in the prompt.
-  - Safeguard the `GEMINI_API_KEY` on the server-side.
+---
 
-- **Deborah (Frontend Lead):**
-  - Read `frontend/mock_data.json` during UI prototyping.
-  - Build the diagnostic card reflecting `crop`, `condition`, `severity` badge, `advice`, and a TTS voice button for `advice_luganda`.
+## 5. Security & Privacy Standards
 
-- **Odriann (Dashboard Lead):**
-  - Use `dashboard/seed_data.json` for initial Google Maps heat map and marker testing.
-  - Connect the dashboard to `GET /scans` for live district outbreak visualization.
+- **Server-Side API Keys**: `GEMINI_API_KEY` and Google Cloud credentials must remain strictly on the backend server. They must NEVER be exposed in frontend bundles or committed to Git.
+- **Untrusted Input Validation**: All uploaded image files must be validated for size (max 5MB), MIME type (`image/jpeg`, `image/png`, `image/webp`), and file integrity before dispatching to the Gemini API.
+- **Farmer Privacy**: Scans are geotagged at the **district administrative center** level (approximate coordinates) to protect the exact physical homestead location of smallholder farmers from public disclosure.
+
+---
+
+## 6. Team Component Ownership
+
+| Team Member | Role | Component Ownership | Primary Deliverables |
+|---|---|---|---|
+| **Stephen Wasswa** | Project Coordinator & Product Lead | Architecture & Repo Governance | Repo refactoring, UX consistency, pitch deck, coordination |
+| **Atulinda Derek Solomon** | Backend Engineer | `backend/` | Flask API, `/diagnose`, Firestore persistence, `/scans` endpoint |
+| **Lyazi Patrick** | AI & Security Specialist | `backend/` & AI Prompting | Gemini prompt engineering, Luganda translation accuracy, testing |
+| **Deborah Nzopi** | Frontend Developer | `clients/farmer-app/` | Mobile Farmer PWA, Figma UI matching, camera upload, TTS audio |
+| **Twahirwa Odriann** | Dashboard Developer | `clients/dashboard/` | Outbreak surveillance dashboard, Google Maps heat map |
+
+---
+
+## 7. Model Testing & Evaluation Criteria
+
+The AI component must be benchmarked against 10–20 test photographs organized in `data/sample_crops/`:
+- **Banana**: Healthy leaves vs. Banana Bacterial Wilt (BXW).
+- **Cassava**: Healthy foliage vs. Cassava Mosaic Disease (CMD).
+- **Coffee**: Healthy foliage vs. Coffee Leaf Rust (CLR).
+- **Maize**: Healthy foliage vs. Fall Armyworm (FAW) damage.
+- **Inconclusive**: Distant or blurry photos verifying proper error handling.
+
+Evaluation criteria:
+1. Crop classification accuracy.
+2. Plausibility and safety of smallholder treatment steps.
+3. Quality and natural phrasing of Luganda voice guidance.
+4. Schema conformance to this unified contract.

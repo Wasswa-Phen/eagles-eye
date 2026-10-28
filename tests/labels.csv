@@ -1,0 +1,16 @@
+image_filename,host,crop_hint,disease,is_healthy,class_label,original_split,original_filename
+tomato_01.jpg,Tomato,Tomato,healthy,True,Tomato leaf,test,1684.jpg
+tomato_02.jpg,Tomato,Tomato,healthy,True,Tomato leaf,test,2013-08-20-06.jpg
+tomato_03.jpg,Tomato,Tomato,healthy,True,Tomato leaf,test,Tomato59.JPG.jpg
+tomato_04.jpg,Tomato,Tomato,bacterial spot,False,Tomato leaf bacterial spot,test,07.17.18-Common_Tomato_Diseases_Canker-258x300.jpg
+tomato_05.jpg,Tomato,Tomato,early blight,False,Tomato Early blight leaf,test,100983448.jpg
+tomato_06.jpg,Tomato,Tomato,late blight,False,Tomato leaf late blight,test,18c.jpg
+tomato_07.jpg,Tomato,Tomato,mold,False,Tomato mold leaf,test,49%20Leafmold%20Bottom.jpg
+tomato_08.jpg,Tomato,Tomato,mosaic virus,False,Tomato leaf mosaic virus,test,D%29AlfMov.jpg
+tomato_09.jpg,Tomato,Tomato,septoria leaf spot,False,Tomato Septoria leaf spot,test,0.jpg
+tomato_10.jpg,Tomato,Tomato,two spotted spider mites,False,Tomato two spotted spider mites leaf,train,SpotSpeckBlightMite-1l4v879.jpg
+tomato_11.jpg,Tomato,Tomato,yellow virus,False,Tomato leaf yellow virus,test,11-40580_5.jpg
+tomato_12.jpg,Tomato,Tomato,early blight,False,Tomato Early blight leaf,test,dscn3175.jpg
+corn_13.jpg,Corn,Maize,gray leaf spot,False,Corn Gray leaf spot,test,IMG_42231.jpg
+corn_14.jpg,Corn,Maize,leaf blight,False,Corn leaf blight,test,02c.jpg
+corn_15.jpg,Corn,Maize,rust,False,Corn rust leaf,test,0796.40comrust.jpg

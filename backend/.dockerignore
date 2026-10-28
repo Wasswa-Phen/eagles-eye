@@ -1,0 +1,7 @@
+# Never bake secrets or local clutter into the container image.
+.env
+.env.*
+venv/
+.venv/
+__pycache__/
+*.pyc

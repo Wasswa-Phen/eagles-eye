@@ -1,6 +1,6 @@
 {
   "description": "Eagles Eye - Mock Diagnosis Data for Frontend Development (Owned by Deborah)",
-  "reference_contract": "../docs/DATA_CONTRACT.md",
+  "reference_contract": "../../docs/DATA_CONTRACT.md",
   "mock_cases": {
     "infected_cassava": {
       "crop": "Cassava",

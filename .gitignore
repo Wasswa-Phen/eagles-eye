@@ -1,49 +1,70 @@
-# Environment variables & secrets
+# =========================================================================
+# Eagles Eye — Unified Repository .gitignore
+# Consolidated Single Source of Truth for DevOps & Version Control
+# =========================================================================
+
+# --- Environment variables & secrets (CRITICAL) ---
 .env
 .env.*
 !.env.example
+.flaskenv
+*.env.[a-zA-Z]*
+instance/
+.secret
+.secrets
+certs/
 *.pem
 *.key
+*.crt
 
-# Python & Virtual Environments
-venv/
-.venv/
-env/
-ENV/
-env.bak/
-venv.bak/
+# --- Python Core & Bytecode ---
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# --- Virtual Environments ---
+venv/
+.venv/
+ENV/
+env/
+venv-testing/
+pythonenv*/
+
+# --- Distribution & Builds ---
 build/
-develop-eggs/
 dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.pytest_cache/
-.coverage
-htmlcov/
+MANIFEST
 
-# Node & Frontend dependencies
+# --- Testing, Coverage, & Code Quality ---
+.tox/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# --- Node & Frontend Dependencies ---
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Operating System Files
+# --- Operating System Files ---
 .DS_Store
 .DS_Store?
 ._*
@@ -53,10 +74,10 @@ ehthumbs.db
 Thumbs.db
 [Dd]esktop.ini
 
-# IDE & Editor files
+# --- IDE & Editor Files ---
 .idea/
 .vscode/
 *.swp
 *.swo
-*~
-tempCodeRunnerFile.py
+*.sublime-workspace
+*.sublime-project
