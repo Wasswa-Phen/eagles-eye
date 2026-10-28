@@ -17,6 +17,10 @@ import json
 from google import genai
 from google.genai import types
 
+# [DEREK] Backend helpers: Firestore storage and district coordinates
+from db import list_scans, save_scan, storage_mode
+from districts import get_location, normalise_district
+
 # Load environment variables from .env file
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -25,6 +29,19 @@ app = Flask(__name__)
 
 # Enable Cross-Origin Resource Sharing (CORS) for frontend & dashboard clients
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+# [DEREK] Flask refuses any request body over 6 MB before our code even runs.
+# (The 5 MB image limit below still applies; the extra 1 MB covers form fields.)
+app.config["MAX_CONTENT_LENGTH"] = 6 * 1024 * 1024
+
+
+@app.errorhandler(413)
+def request_too_large(error):
+    """Return our standard JSON error shape when an upload is too big."""
+    return jsonify({
+        "status": "error",
+        "message": "The image must not exceed 5 MB."
+    }), 413
 
 # Configuration
 PORT = int(os.environ.get("PORT", 8080))
@@ -50,6 +67,7 @@ def health_check():
         "status": "healthy",
         "service": "Eagles Eye API",
         "version": "1.0.0",
+        "storage": storage_mode(),  # [DEREK] "firestore" or "memory"
         "timestamp": datetime.now(timezone.utc).isoformat()
     }), 200
 
@@ -100,16 +118,13 @@ def diagnose_crop():
             "message": "The AI service is not configured."
         }), 503
 
-    district = (request.form.get("district") or "Unknown").strip()
+    # [DEREK] Clean the district text (safe characters, short, "Unknown" if empty).
+    district = normalise_district(request.form.get("district"))
     crop_hint = (request.form.get("crop_hint") or "").strip()
 
-    # Temporary coordinate fallback. Replace with verified district
-    # centroid coordinates before using scans for real outbreak mapping.
-    location = {
-        "district": district or "Unknown",
-        "latitude": 0.3476,
-        "longitude": 32.5825
-    }
+    # [DEREK] Trusted location: fixed district coordinates from districts.py.
+    # The AI never decides the location.
+    location = get_location(district)
 
     prompt = f"""
 You are the preliminary crop-health assessment assistant for Eagles Eye,
@@ -223,6 +238,12 @@ say so in the advice. Do not recommend unsafe chemical use.
             )
         }
 
+        # [DEREK] Log the scan for the outbreak map. Blurry / unusable photos
+        # are skipped because they say nothing about crop health.
+        # save_scan() never raises, so a database problem can't break the response.
+        if not is_inconclusive:
+            save_scan(diagnosis)
+
         return jsonify({
             "status": "inconclusive" if is_inconclusive else "success",
             "data": diagnosis
@@ -249,69 +270,32 @@ say so in the advice. Do not recommend unsafe chemical use.
 @app.route("/scans", methods=["GET"])
 def get_scans():
     """
-    Returns recent crop diagnosis records for the outbreak heat map dashboard.
-    Currently returns sample stub records conforming to docs/DATA_CONTRACT.md.
+    Return logged scans for the outbreak heat map dashboard, newest first.
 
-    TODO (Derek):
-      - Query Google Cloud Firestore 'scans' collection.
-      - Add optional query parameter filtering (e.g. ?district=Masaka, ?limit=50).
-      - Order results by timestamp descending.
+    Optional query parameters (see docs/DATA_CONTRACT.md, section 3.2):
+      ?district=Masaka   only scans from that district
+      ?limit=50          how many scans to return (default 50, maximum 200)
     """
-    stub_scans = [
-        {
-            "id": "scan_001",
-            "crop": "Banana / Matooke",
-            "condition": "Banana Bacterial Wilt (BXW)",
-            "confidence": 0.95,
-            "severity": "high",
-            "is_healthy": False,
-            "advice": "Cut down the infected pseudostem immediately at ground level. Disinfect machetes in fire.",
-            "advice_luganda": "Temako ekitooke ekirwadde mangu ddala wansi ku ttaka. Yosa emyso mu muliro.",
-            "location": {
-                "district": "Masaka",
-                "latitude": -0.3411,
-                "longitude": 31.7361
-            },
-            "timestamp": "2026-10-26T10:15:00Z"
-        },
-        {
-            "id": "scan_002",
-            "crop": "Cassava",
-            "condition": "Cassava Mosaic Disease (CMD)",
-            "confidence": 0.88,
-            "severity": "moderate",
-            "is_healthy": False,
-            "advice": "Rogue out stunted or curling cassava plants. Inspect for whitefly infestations.",
-            "advice_luganda": "Simbula ebiwuka ebikyamye ebiraga obulwadde bwa mosaic. Kebera obuwuka obweru.",
-            "location": {
-                "district": "Mukono",
-                "latitude": 0.3549,
-                "longitude": 32.7523
-            },
-            "timestamp": "2026-10-26T11:45:00Z"
-        },
-        {
-            "id": "scan_003",
-            "crop": "Coffee",
-            "condition": "Coffee Leaf Rust (CLR)",
-            "confidence": 0.91,
-            "severity": "high",
-            "is_healthy": False,
-            "advice": "Prune shade trees to increase airflow and apply approved copper fungicide before wet rains.",
-            "advice_luganda": "Saalira emiti gy'emmwanyi okuyingiza empewo era osaaseeko eddagala lya kopa erikakasibwa.",
-            "location": {
-                "district": "Mbale",
-                "latitude": 1.0784,
-                "longitude": 34.1754
-            },
-            "timestamp": "2026-10-26T13:20:00Z"
-        }
-    ]
+    # [DEREK] Read the optional filters. A missing district means "all districts".
+    district = request.args.get("district", "").strip()
+    district = normalise_district(district) if district else None
+
+    # type=int quietly falls back to the default if the value isn't a number.
+    limit = request.args.get("limit", default=50, type=int)
+
+    try:
+        scans = list_scans(district=district, limit=limit)
+    except Exception:
+        app.logger.exception("Could not read scans")
+        return jsonify({
+            "status": "error",
+            "message": "Could not load scans right now. Please try again."
+        }), 500
 
     return jsonify({
         "status": "success",
-        "count": len(stub_scans),
-        "scans": stub_scans
+        "count": len(scans),
+        "scans": scans
     }), 200
 
 
