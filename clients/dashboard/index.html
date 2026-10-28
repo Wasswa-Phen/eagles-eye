@@ -1,254 +1,273 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Eagles Eye — Crop Disease Surveillance</title>
-  <meta name="description" content="Eagles Eye crop disease surveillance dashboard for Uganda.">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+  <title>Eagles Eye — Outbreak Surveillance Dashboard</title>
+  <meta name="description" content="Eagles Eye crop disease surveillance dashboard for Ugandan agricultural extension officers.">
+  <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-<div class="app-shell">
-
-  <aside class="sidebar">
-    <a class="sidebar-brand" href="#overview" aria-label="Eagles Eye home">
-      <span class="sidebar-brand-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-      </span>
-      <span>Eagles <strong>Eye</strong></span>
-    </a>
-
-    <nav class="sidebar-nav" aria-label="Main navigation">
-      <a class="sidebar-link active" href="#overview">
-        <span class="sidebar-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8">
-            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-            <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+  <div class="dashboard">
+    <aside class="sidebar">
+      <div class="logo logo--compact">
+        <span class="logo-mark">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2 12s3.7-6 10-6 10 6 10 6-3.7 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>
           </svg>
         </span>
-        Overview
-      </a>
-
-      <a class="sidebar-link" href="#map-container">
-        <span class="sidebar-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/>
-            <path d="M9 3v15M15 6v15"/>
-          </svg>
-        </span>
-        Outbreak map
-      </a>
-
-      <a class="sidebar-link" href="#outbreak-list-container">
-        <span class="sidebar-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M7 3h10l4 4v14H3V3h4Z"/>
-            <path d="M7 3v5h10V3M7 13h10M7 17h7"/>
-          </svg>
-        </span>
-        Reports
-      </a>
-    </nav>
-
-    <div class="sidebar-footer">
-      <span class="status-dot" aria-hidden="true"></span>
-      Demo environment
-    </div>
-  </aside>
-
-  <div class="workspace">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">EAGLES EYE | UGANDA</p>
-        <h1>Crop disease surveillance</h1>
-        <p class="topbar-subtitle">
-          Monitor crop health and reported disease hotspots.
-        </p>
+        <span><b>Eagles</b> Eye</span>
       </div>
 
-      <div class="topbar-actions">
-        <span class="badge-demo">Demo data</span>
-        <button class="btn-sync" id="btn-fetch-backend" type="button">
-          Sync backend
+      <nav aria-label="Dashboard navigation">
+        <button type="button" class="active" data-nav="overview">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/>
+          </svg>
+          <span>Overview</span>
         </button>
+        <button type="button" data-nav="map">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z"/><path d="M9 3v15M15 6v15"/>
+          </svg>
+          <span>Outbreak map</span>
+        </button>
+        <button type="button" data-nav="reports">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 3h14v18H5z"/><path d="M9 8h6M9 12h6M9 16h4"/>
+          </svg>
+          <span>Reports</span>
+        </button>
+        <button type="button" data-nav="settings">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A7 7 0 0 0 15 6l-.3-2.6h-4L10.4 6a7 7 0 0 0-1.5.9l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2.2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 1.5.9l.3 2.6h4l.3-2.6a7 7 0 0 0 1.5-.9l2.4 1 2-3.4-2-1.5c.1-.3.1-.7.1-1Z"/>
+          </svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="officer">
+        <div>AN</div>
+        <span><b>Amina Namusoke</b><small>Extension officer</small></span>
       </div>
-    </header>
+    </aside>
 
-    <main id="overview">
-
-      <div class="demo-banner" role="note">
-        <span class="banner-icon" aria-hidden="true">!</span>
-        <span>
-          Visualizing demo data from
-          <a href="seed_data.json" target="_blank" rel="noopener">seed_data.json</a>.
-          These are demonstration records, not verified outbreaks.
-        </span>
-      </div>
-
-      <div class="page-header">
-        <h2>Uganda Crop Disease Surveillance</h2>
-        <p>Regional disease reports and AI-assisted field observations</p>
-      </div>
-
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <span class="kpi-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M4 19V5M4 19h17"/>
-              <path d="M8 16v-5M13 16V7M18 16v-8"/>
-            </svg>
-          </span>
-          <div class="kpi-label">Total Scans</div>
-          <div class="kpi-value kpi-value--success" id="kpi-scans">0</div>
-          <div class="kpi-sub">Records loaded</div>
+    <main class="dashboard-main">
+      <header class="dashboard-header">
+        <div>
+          <p id="header-date">MONDAY, 14 OCTOBER</p>
+          <h1 id="header-title">Good morning, Amina</h1>
+          <span id="header-subtitle">Here’s what’s happening across your districts.</span>
         </div>
 
-        <div class="kpi-card kpi-card--danger">
-          <span class="kpi-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/>
-              <circle cx="12" cy="10" r="2.5"/>
+        <div class="dashboard-actions">
+          <button type="button" class="notification" id="btn-notification" aria-label="Notifications">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>
             </svg>
-          </span>
-          <div class="kpi-label">Hotspot Districts</div>
-          <div class="kpi-value kpi-value--danger" id="kpi-districts">0</div>
-          <div class="kpi-sub">Unique reporting districts</div>
-        </div>
+            <i id="notif-dot"></i>
+          </button>
 
-        <div class="kpi-card kpi-card--warning">
-          <span class="kpi-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="m12 3 10 18H2L12 3Z"/>
-              <path d="M12 9v5M12 17h.01"/>
+          <button type="button" class="button button--primary" id="btn-download">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M5 20h14"/>
             </svg>
-          </span>
-          <div class="kpi-label">High-Severity Alerts</div>
-          <div class="kpi-value kpi-value--warning" id="kpi-high-severity">0</div>
-          <div class="kpi-sub">Reports marked high severity</div>
-        </div>
+            <span>Download report</span>
+          </button>
 
-        <div class="kpi-card kpi-card--success">
-          <span class="kpi-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M20 4C10 4 4 8 4 15a5 5 0 0 0 5 5c7 0 11-6 11-16Z"/>
-              <path d="M3 22c3-6 7-9 13-13"/>
+          <div class="notif-popover" id="notif-popover" hidden>
+            <h3>Recent district alerts</h3>
+            <div id="notif-list"></div>
+          </div>
+        </div>
+      </header>
+
+      <!-- KPI STATS -->
+      <section class="stats" id="stats-section">
+        <article class="stat">
+          <div class="stat-icon s0">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14.5 5 13 3h-2L9.5 5H4a2 2 0 0 0-2 2v11h20V7a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="4"/>
             </svg>
-          </span>
-          <div class="kpi-label">Crops Monitored</div>
-          <div class="kpi-value kpi-value--crops" id="kpi-crops">0</div>
-          <div class="kpi-sub">Unique crop types</div>
-        </div>
-      </div>
+          </div>
+          <span>Scans this week</span>
+          <b id="stat-scans">2,847</b>
+          <small class="positive" id="stat-scans-sub">+12.4%</small>
+        </article>
 
-      <div class="dashboard-grid">
+        <article class="stat">
+          <div class="stat-icon s1">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>
+            </svg>
+          </div>
+          <span>Active outbreaks</span>
+          <b id="stat-outbreaks">12</b>
+          <small class="positive" id="stat-outbreaks-sub">+3 this week</small>
+        </article>
 
-        <section class="card">
-          <div class="card-header">
-            <h2 class="card-title">
-              <span class="card-title-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/>
-                  <path d="M9 3v15M15 6v15"/>
-                </svg>
-              </span>
-              Regional Outbreak Map
-            </h2>
-            <span class="card-meta">Uganda</span>
+        <article class="stat">
+          <div class="stat-icon s2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z"/><path d="M9 3v15M15 6v15"/>
+            </svg>
+          </div>
+          <span>Districts affected</span>
+          <b id="stat-districts">18</b>
+          <small id="stat-districts-sub">of 146 districts</small>
+        </article>
+
+        <article class="stat">
+          <div class="stat-icon s3">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 4C12 3 5 7 5 14c0 3 2 5 5 5 7 0 10-7 10-15Z"/><path d="M4 21c3-6 7-9 13-13"/>
+            </svg>
+          </div>
+          <span>Most common disease</span>
+          <b id="stat-disease">Cassava mosaic</b>
+          <small id="stat-disease-sub">38% of diagnoses</small>
+        </article>
+      </section>
+
+      <!-- OVERVIEW / OUTBREAK MAP GRID -->
+      <section class="dashboard-grid" id="dashboard-grid">
+        <article class="map-card" id="map-card">
+          <div class="card-heading">
+            <div>
+              <h2>Outbreak map</h2>
+              <p id="map-period-subtitle">Confirmed cases by district · Last 30 days</p>
+            </div>
+            <span class="live" id="live-indicator"><i></i> Live data</span>
           </div>
 
-          <div id="map-container">
-            <div id="google-map" aria-label="Map showing crop disease report locations"></div>
-            <div class="map-overlay" id="map-loading-overlay">
-              <span class="map-overlay-icon"><span class="spinner"></span></span>
-              <div class="map-overlay-title">Loading map</div>
-              <div class="map-overlay-text">Initializing the map and report markers.</div>
-            </div>
-          </div>
+          <div class="uganda-map">
+            <svg viewBox="0 0 610 510" aria-label="Uganda outbreak heat map">
+              <path class="country" d="M181 43 273 58l66-34 65 47 80 8 30 70-35 78 24 76-60 56-35 106-97 20-52-52-77-11-29-78-57-52 36-80-20-77Z"/>
+              <path class="district d1" d="m181 43 92 15 22 84-65 46-98-33-20-77Z"/>
+              <path class="district d2" d="m295 142 44-118 65 47 80 8 30 70-85 34Z"/>
+              <path class="district d3" d="m230 188 65-46 134 41-22 93-126 20Z"/>
+              <path class="district d4" d="m132 155 98 33 51 108-65 67-63-29-57-52Z"/>
+              <path class="district d5" d="m281 296 126-20 76 27-60 56-35 106-77 20-52-52-43-70Z"/>
+              <g id="map-pins">
+                <g class="map-pin hot" data-district="Masaka" tabindex="0" role="button" aria-label="Masaka hotspot">
+                  <circle cx="322" cy="333" r="17"/>
+                  <circle cx="322" cy="333" r="6"/>
+                  <text x="344" y="338">Masaka</text>
+                </g>
+                <g class="map-pin warn" data-district="Mbale" tabindex="0" role="button" aria-label="Mbale alert">
+                  <circle cx="410" cy="215" r="17"/>
+                  <circle cx="410" cy="215" r="6"/>
+                  <text x="432" y="220">Mbale</text>
+                </g>
+                <g class="map-pin safe" data-district="Gulu" tabindex="0" role="button" aria-label="Gulu low risk">
+                  <circle cx="235" cy="122" r="17"/>
+                  <circle cx="235" cy="122" r="6"/>
+                  <text x="257" y="127">Gulu</text>
+                </g>
+                <g class="map-pin warn" data-district="Mbarara" tabindex="0" role="button" aria-label="Mbarara alert">
+                  <circle cx="228" cy="350" r="17"/>
+                  <circle cx="228" cy="350" r="6"/>
+                  <text x="250" y="355">Mbarara</text>
+                </g>
+              </g>
+            </svg>
 
-          <div class="map-legend">
-            <div class="legend-item">
-              <span class="legend-dot legend-dot--high"></span>
-              <span>High severity</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot legend-dot--moderate"></span>
-              <span>Moderate severity</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot legend-dot--low"></span>
-              <span>Low severity</span>
-            </div>
-          </div>
-        </section>
-
-        <section class="card">
-          <div class="card-header">
-            <h2 class="card-title">Recent Reports</h2>
-            <span class="card-meta" id="alerts-count-label">Loading reports</span>
-          </div>
-
-          <div class="filter-controls" id="filter-controls">
-            <div class="filter-row">
-              <div class="filter-group">
-                <label class="filter-label" for="district-filter">District</label>
-                <select class="filter-select" id="district-filter">
-                  <option value="all">All districts</option>
-                </select>
+            <div class="map-pin-card" id="map-pin-card" hidden>
+              <div class="map-pin-card-head">
+                <strong id="pin-card-title">Masaka</strong>
+                <button type="button" class="map-pin-card-close" id="btn-close-pin-card" aria-label="Close">✕</button>
               </div>
-
-              <div class="filter-group">
-                <label class="filter-label" for="crop-filter">Crop</label>
-                <select class="filter-select" id="crop-filter">
-                  <option value="all">All crops</option>
-                </select>
-              </div>
+              <span class="sev-badge high" id="pin-card-badge">High</span>
+              <p id="pin-card-body"></p>
             </div>
 
-            <div class="filter-row">
-              <div class="filter-group filter-group--full">
-                <label class="filter-label" for="severity-filter">Severity</label>
-                <select class="filter-select" id="severity-filter">
-                  <option value="all">All severities</option>
-                </select>
-              </div>
+            <div class="legend">
+              <span>Low</span><i></i><i></i><i></i><i></i><span>High</span>
             </div>
           </div>
+        </article>
 
-          <div class="outbreak-list" id="outbreak-list-container" role="list">
-            <div class="state-box">
-              <span class="spinner"></span>
-              <div class="state-box-title">Loading reports</div>
-            </div>
+        <aside class="threat-panel" id="threat-panel">
+          <div>
+            <h2>Top threats</h2>
+            <p>Ranked by confirmed scans</p>
           </div>
-        </section>
 
-      </div>
+          <div class="filters">
+            <button type="button" id="filter-crop">All crops<span>⌄</span></button>
+            <button type="button" id="filter-disease">All diseases<span>⌄</span></button>
+            <button type="button" id="filter-period">Last 30 days<span>⌄</span></button>
+          </div>
+
+          <ol id="threat-list">
+            <li><b>1</b><div><strong>Cassava mosaic</strong><span>Cassava · 486 scans</span></div><em class="up">↑ 18%</em></li>
+            <li><b>2</b><div><strong>Fall armyworm</strong><span>Maize · 321 scans</span></div><em class="up">↑ 12%</em></li>
+            <li><b>3</b><div><strong>Banana wilt</strong><span>Banana · 197 scans</span></div><em class="down">↓ 4%</em></li>
+            <li><b>4</b><div><strong>Coffee leaf rust</strong><span>Coffee · 145 scans</span></div><em>→ 0%</em></li>
+          </ol>
+
+          <button type="button" class="view-all" id="btn-view-all">
+            View all threats
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m9 18 6-6-6-6"/>
+            </svg>
+          </button>
+        </aside>
+      </section>
+
+      <!-- REPORTS VIEW -->
+      <section class="subview-card" id="reports-view" hidden>
+        <div class="subview-toolbar">
+          <div>
+            <h2>Field diagnostic reports</h2>
+            <p id="reports-count-text">Confirmed district submissions & AI advisories</p>
+          </div>
+          <div class="subview-filters">
+            <select id="rep-filter-district" aria-label="Filter by district">
+              <option value="all">All districts</option>
+            </select>
+            <select id="rep-filter-crop" aria-label="Filter by crop">
+              <option value="all">All crops</option>
+            </select>
+            <select id="rep-filter-severity" aria-label="Filter by severity">
+              <option value="all">All severities</option>
+            </select>
+            <button type="button" class="btn-sync-live" id="btn-sync-backend">Sync live API</button>
+          </div>
+        </div>
+        <div class="reports-list" id="reports-list"></div>
+      </section>
+
+      <!-- SETTINGS VIEW -->
+      <section class="subview-card" id="settings-view" hidden>
+        <div class="subview-toolbar">
+          <div>
+            <h2>Surveillance settings</h2>
+            <p>Extension officer workspace & backend API connectivity</p>
+          </div>
+          <button type="button" class="btn-sync-live" id="btn-check-health">Test API health</button>
+        </div>
+        <div class="settings-grid">
+          <div class="setting-box">
+            <h3>Extension Officer</h3>
+            <p><b>Amina Namusoke</b> · Senior Agricultural Extension Officer (Central & Eastern Uganda)</p>
+          </div>
+          <div class="setting-box">
+            <h3>Backend API (`http://localhost:8080`)</h3>
+            <p id="api-health-desc">Connects to Flask + Gemini + Firestore `/scans` endpoint with offline `seed_data.json` fallback.</p>
+            <span class="api-status" id="api-health-pill">Checking status...</span>
+          </div>
+          <div class="setting-box">
+            <h3>Privacy & Geotagging</h3>
+            <p>All farmer scans are anonymized to district-centre coordinates in compliance with the Eagles Eye Data Contract.</p>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
-</div>
 
-<div class="toast-container" id="toast-container" aria-live="polite"></div>
-
-<!-- Load dashboard logic before Google Maps calls its callback. -->
-<script src="script.js"></script>
-
-<!-- Replace YOUR_RESTRICTED_API_KEY with your restricted Google Maps key. -->
-<script async
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGAxLyJ9flSpu04K-gKBVI0ysm8qbpxds&callback=initGoogleMap&loading=async">
-</script>
-
+  <script src="script.js"></script>
 </body>
 </html>

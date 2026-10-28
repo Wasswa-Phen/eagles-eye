@@ -1,659 +1,534 @@
+(function () {
+  'use strict';
 
-'use strict';
+  const API_BASE = 'http://localhost:8080';
 
-/* =========================================================
-   EAGLES EYE DASHBOARD
-   ========================================================= */
+  const THREATS = [
+    {
+      rank: 1,
+      disease: 'Cassava mosaic',
+      crop: 'Cassava',
+      scans30d: 486,
+      scans7d: 142,
+      scansToday: 24,
+      trend: '↑ 18%',
+      trendClass: 'up',
+      districts: ['Masaka', 'Mukono', 'Mbarara']
+    },
+    {
+      rank: 2,
+      disease: 'Fall armyworm',
+      crop: 'Maize',
+      scans30d: 321,
+      scans7d: 96,
+      scansToday: 17,
+      trend: '↑ 12%',
+      trendClass: 'up',
+      districts: ['Mbale', 'Gulu', 'Masaka']
+    },
+    {
+      rank: 3,
+      disease: 'Banana wilt',
+      crop: 'Banana',
+      scans30d: 197,
+      scans7d: 51,
+      scansToday: 8,
+      trend: '↓ 4%',
+      trendClass: 'down',
+      districts: ['Masaka', 'Mbarara']
+    },
+    {
+      rank: 4,
+      disease: 'Coffee leaf rust',
+      crop: 'Coffee',
+      scans30d: 145,
+      scans7d: 39,
+      scansToday: 6,
+      trend: '→ 0%',
+      trendClass: '',
+      districts: ['Mbale']
+    }
+  ];
 
-let allReports = [];
-let cropMap = null;
-let cropMapMarkers = [];
-let mapInfoWindows = [];
-
-/* =========================================================
-   SAFE HTML HELPERS
-   ========================================================= */
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function showToast(message, type = 'info', durationMs = 4000) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-
-  const toast = document.createElement('div');
-  toast.className = `toast toast--${type}`;
-  toast.textContent = message;
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s ease';
-    setTimeout(() => toast.remove(), 300);
-  }, durationMs);
-}
-
-/* =========================================================
-   REPORT NORMALIZATION
-   Supports your seed_data.json structure and common
-   alternative backend field names.
-   ========================================================= */
-
-function normalizeReport(report, index = 0) {
-  const location = report.location || {};
-
-  const rawLat =
-    location.latitude ?? location.lat ??
-    report.latitude ?? report.lat;
-
-  const rawLng =
-    location.longitude ?? location.lng ??
-    report.longitude ?? report.lng;
-
-  const lat = rawLat === null || rawLat === undefined ||
-              rawLat === '' ? NaN : Number(rawLat);
-
-  const lng = rawLng === null || rawLng === undefined ||
-              rawLng === '' ? NaN : Number(rawLng);
-
-  return {
-    ...report,
-    id: report.id ?? `report-${index}`,
-    crop: String(report.crop ?? report.crop_type ?? 'Unknown crop'),
-    condition: String(
-      report.condition ?? report.disease ?? report.disease_name ??
-      'Condition not specified'
-    ),
-    severity: String(report.severity ?? 'unknown').toLowerCase(),
-    confidence: Number(report.confidence ?? 0),
-    advice: String(report.advice ?? 'No advice available.'),
-    advice_luganda: String(report.advice_luganda ?? ''),
-    timestamp: report.timestamp ?? report.created_at ?? null,
-    location: {
-      ...location,
-      district: String(
-        location.district ?? report.district ?? 'Unknown district'
-      ),
-      subcounty: String(
-        location.subcounty ?? report.subcounty ??
-        location.district ?? report.district ?? 'Unknown area'
-      ),
-      latitude: lat,
-      longitude: lng
+  const DISTRICT_SUMMARIES = {
+    Masaka: {
+      severity: 'high',
+      label: 'High risk',
+      summary: '412 confirmed scans · Banana bacterial wilt & Cassava mosaic hotspots active in Buwunga.'
+    },
+    Mbale: {
+      severity: 'moderate',
+      label: 'Moderate risk',
+      summary: '268 confirmed scans · Coffee leaf rust & Fall armyworm reported across Bungokho.'
+    },
+    Gulu: {
+      severity: 'healthy',
+      label: 'Low risk',
+      summary: '94 confirmed scans · Early maize scouting active; mostly healthy crop foliage.'
+    },
+    Mbarara: {
+      severity: 'moderate',
+      label: 'Moderate risk',
+      summary: '219 confirmed scans · Banana wilt & Cassava mosaic advisories issued to cooperatives.'
     }
   };
-}
 
-/* =========================================================
-   SEVERITY STYLING
-   ========================================================= */
+  const CROP_OPTIONS = ['All crops', 'Cassava', 'Maize', 'Banana', 'Coffee'];
+  const DISEASE_OPTIONS = ['All diseases', 'Cassava mosaic', 'Fall armyworm', 'Banana wilt', 'Coffee leaf rust'];
+  const PERIOD_OPTIONS = ['Last 30 days', 'Last 7 days', 'Today'];
 
-function severityClass(severity) {
-  switch (String(severity ?? '').toLowerCase()) {
-    case 'high':
-      return 'severity-high';
-    case 'moderate':
-      return 'severity-moderate';
-    case 'low':
-      return 'severity-low';
-    default:
-      return 'severity-none';
+  const state = {
+    activeNav: 'overview',
+    cropIdx: 0,
+    diseaseIdx: 0,
+    periodIdx: 0,
+    reports: []
+  };
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
-}
 
-function markerColor(severity) {
-  switch (String(severity ?? '').toLowerCase()) {
-    case 'high':
-      return '#dc2626';
-    case 'moderate':
-      return '#d97706';
-    case 'low':
-      return '#059669';
-    default:
-      return '#64748b';
+  function normalizeReport(raw, idx) {
+    const loc = raw.location || {};
+    return {
+      id: raw.id || `scan-${idx + 1}`,
+      crop: String(raw.crop || 'Unknown'),
+      condition: String(raw.condition || 'Unspecified condition'),
+      confidence: Number(raw.confidence ?? 0.9),
+      severity: String(raw.severity || 'moderate').toLowerCase(),
+      advice: String(raw.advice || ''),
+      advice_luganda: String(raw.advice_luganda || ''),
+      district: String(loc.district || raw.district || 'Unknown'),
+      subcounty: String(loc.subcounty || ''),
+      timestamp: raw.timestamp || ''
+    };
   }
-}
 
-/* =========================================================
-   LOAD DEMO DATA
-   ========================================================= */
+  // Threat filtering & map pin synchronization
+  function getPeriodScans(threat) {
+    const period = PERIOD_OPTIONS[state.periodIdx];
+    if (period === 'Last 7 days') return threat.scans7d;
+    if (period === 'Today') return threat.scansToday;
+    return threat.scans30d;
+  }
 
-async function loadOutbreakFeed() {
-  const container = document.getElementById('outbreak-list-container');
+  function renderThreatsAndPins() {
+    const selectedCrop = CROP_OPTIONS[state.cropIdx];
+    const selectedDisease = DISEASE_OPTIONS[state.diseaseIdx];
+    const selectedPeriod = PERIOD_OPTIONS[state.periodIdx];
 
-  try {
-    const response = await fetch('./seed_data.json', {
-      cache: 'no-store'
+    const btnCrop = document.getElementById('filter-crop');
+    const btnDisease = document.getElementById('filter-disease');
+    const btnPeriod = document.getElementById('filter-period');
+
+    btnCrop.innerHTML = `${escapeHtml(selectedCrop)}<span>⌄</span>`;
+    btnDisease.innerHTML = `${escapeHtml(selectedDisease)}<span>⌄</span>`;
+    btnPeriod.innerHTML = `${escapeHtml(selectedPeriod)}<span>⌄</span>`;
+
+    btnCrop.classList.toggle('filtered', state.cropIdx > 0);
+    btnDisease.classList.toggle('filtered', state.diseaseIdx > 0);
+    btnPeriod.classList.toggle('filtered', state.periodIdx > 0);
+
+    document.getElementById('map-period-subtitle').textContent =
+      `Confirmed cases by district · ${selectedPeriod}`;
+
+    const filtered = THREATS.filter((t) => {
+      const cropMatch = selectedCrop === 'All crops' || t.crop === selectedCrop;
+      const disMatch = selectedDisease === 'All diseases' || t.disease === selectedDisease;
+      return cropMatch && disMatch;
     });
 
-    if (!response.ok) {
-      throw new Error(`Could not load seed_data.json (HTTP ${response.status}).`);
+    const listEl = document.getElementById('threat-list');
+    if (filtered.length === 0) {
+      listEl.innerHTML = `<li><b>–</b><div><strong>No matching threats</strong><span>Click filter buttons to reset</span></div><em>0</em></li>`;
+    } else {
+      listEl.innerHTML = filtered
+        .map((item, idx) => {
+          const count = getPeriodScans(item);
+          const emClass = item.trendClass ? ` class="${item.trendClass}"` : '';
+          return `<li>
+            <b>${idx + 1}</b>
+            <div>
+              <strong>${escapeHtml(item.disease)}</strong>
+              <span>${escapeHtml(item.crop)} · ${count} scans</span>
+            </div>
+            <em${emClass}>${escapeHtml(item.trend)}</em>
+          </li>`;
+        })
+        .join('');
     }
 
-    const data = await response.json();
+    // Highlight matching map pins
+    const activeDistricts = new Set();
+    filtered.forEach((t) => t.districts.forEach((d) => activeDistricts.add(d)));
+    const isFiltered = state.cropIdx > 0 || state.diseaseIdx > 0;
 
-    if (!Array.isArray(data)) {
-      throw new Error('seed_data.json must contain a JSON array of reports.');
-    }
-
-    allReports = data.map(normalizeReport);
-
-    updateKPIs();
-    populateFilter('district-filter', allReports.map(r => r.location.district));
-    populateFilter('crop-filter', allReports.map(r => r.crop));
-    populateFilter('severity-filter', allReports.map(r => r.severity));
-
-    renderOutbreakFeed();
-
-    if (cropMap) {
-      placeMarkersFromReports();
-    }
-
-    console.info(`Loaded ${allReports.length} report(s).`);
-  } catch (error) {
-    console.error('Failed to load demo reports:', error);
-
-    if (container) {
-      container.innerHTML = `
-        <div class="state-box state-box--error">
-          <div class="state-box-title">Could not load reports</div>
-          <div class="state-box-text">
-            ${escapeHtml(error.message)}
-            <p>Check that the dashboard is running on a local web server
-            and that seed_data.json is in the same folder as index.html.</p>
-          </div>
-          <button type="button" class="btn-sync" id="retry-load-reports">
-            Retry loading reports
-          </button>
-        </div>
-      `;
-
-      document.getElementById('retry-load-reports')
-        ?.addEventListener('click', loadOutbreakFeed);
-    }
-
-    const count = document.getElementById('alerts-count-label');
-    if (count) count.textContent = 'Reports unavailable';
-  }
-}
-
-/* =========================================================
-   KPI CARDS
-   ========================================================= */
-
-function updateKPIs() {
-  const districts = new Set(
-    allReports.map(r => r.location.district).filter(Boolean)
-  );
-
-  const crops = new Set(
-    allReports.map(r => r.crop).filter(Boolean)
-  );
-
-  const highCount = allReports.filter(
-    r => r.severity === 'high'
-  ).length;
-
-  document.getElementById('kpi-scans').textContent =
-    allReports.length;
-
-  document.getElementById('kpi-districts').textContent =
-    districts.size;
-
-  document.getElementById('kpi-high-severity').textContent =
-    highCount;
-
-  document.getElementById('kpi-crops').textContent =
-    crops.size;
-}
-
-/* =========================================================
-   FILTER DROPDOWNS
-   ========================================================= */
-
-function populateFilter(filterId, values) {
-  const dropdown = document.getElementById(filterId);
-
-  if (!dropdown) {
-    console.error(`Dropdown not found: #${filterId}`);
-    return;
+    document.querySelectorAll('#map-pins .map-pin').forEach((pin) => {
+      const dist = pin.getAttribute('data-district');
+      pin.classList.toggle('dimmed', isFiltered && !activeDistricts.has(dist));
+    });
   }
 
-  const previousValue = dropdown.value;
+  // Map pin popover
+  function openPinCard(districtName) {
+    const info = DISTRICT_SUMMARIES[districtName];
+    if (!info) return;
 
-  const uniqueValues = [...new Set(
-    values
-      .filter(value => value !== null && value !== undefined)
-      .map(value => String(value).trim())
-      .filter(value => value !== '')
-  )].sort((a, b) => a.localeCompare(b));
+    const card = document.getElementById('map-pin-card');
+    const badge = document.getElementById('pin-card-badge');
 
-  // Preserve the first option, such as "All districts".
-  while (dropdown.options.length > 1) {
-    dropdown.remove(1);
-  }
+    document.getElementById('pin-card-title').textContent = `${districtName} District`;
+    badge.textContent = info.label;
+    badge.className = `sev-badge ${info.severity}`;
 
-  uniqueValues.forEach(value => {
-    const option = document.createElement('option');
-    option.value = value;
-    option.textContent =
-      value.charAt(0).toUpperCase() + value.slice(1);
-
-    dropdown.appendChild(option);
-  });
-
-  // Keep the selected value if it still exists.
-  if (uniqueValues.includes(previousValue)) {
-    dropdown.value = previousValue;
-  } else {
-    dropdown.value = 'all';
-  }
-}
-
-/* =========================================================
-   FILTERING
-   ========================================================= */
-
-function getFilteredReports() {
-  const district = document.getElementById('district-filter')?.value ?? 'all';
-  const crop = document.getElementById('crop-filter')?.value ?? 'all';
-  const severity = document.getElementById('severity-filter')?.value ?? 'all';
-
-  return allReports.filter(report => {
-    const matchesDistrict =
-      district === 'all' || report.location.district === district;
-
-    const matchesCrop =
-      crop === 'all' || report.crop === crop;
-
-    const matchesSeverity =
-      severity === 'all' || report.severity === severity;
-
-    return matchesDistrict && matchesCrop && matchesSeverity;
-  });
-}
-
-/* =========================================================
-   REPORT LIST
-   ========================================================= */
-
-function renderOutbreakFeed() {
-  const container = document.getElementById('outbreak-list-container');
-  const countLabel = document.getElementById('alerts-count-label');
-
-  if (!container) return;
-
-  const filteredReports = getFilteredReports();
-
-  if (countLabel) {
-    countLabel.textContent =
-      `${filteredReports.length} of ${allReports.length} reports`;
-  }
-
-  container.innerHTML = '';
-
-  if (filteredReports.length === 0) {
-    container.innerHTML = `
-      <div class="state-box">
-        <div class="state-box-title">No matching reports</div>
-        <div class="state-box-text">
-          Try changing the district, crop, or severity filters.
-        </div>
-        <button type="button" class="btn-sync" id="clear-report-filters">
-          Clear filters
-        </button>
-      </div>
-    `;
-
-    document.getElementById('clear-report-filters')
-      ?.addEventListener('click', clearFilters);
-
-    updateMapMarkers();
-    return;
-  }
-
-  filteredReports.forEach(report => {
-    const severity = report.severity;
-    const confidence = Math.max(
-      0,
-      Math.min(100, Math.round(report.confidence * 100))
+    const liveMatching = state.reports.filter(
+      (r) => r.district.toLowerCase() === districtName.toLowerCase()
     );
+    const extra = liveMatching.length
+      ? ` Latest report: ${liveMatching[0].condition} (${Math.round(liveMatching[0].confidence * 100)}% confidence).`
+      : '';
 
-    let formattedTime = 'Time unavailable';
-
-    if (report.timestamp) {
-      const date = new Date(report.timestamp);
-
-      if (!Number.isNaN(date.getTime())) {
-        formattedTime = date.toLocaleString('en-UG', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      }
-    }
-
-    const item = document.createElement('article');
-    item.className = 'outbreak-item';
-    item.setAttribute('role', 'listitem');
-    item.dataset.id = report.id;
-
-    item.innerHTML = `
-      <div class="outbreak-item-header">
-        <span class="district-name">
-          ${escapeHtml(report.location.district)} District
-        </span>
-        <span class="severity-pill ${severityClass(severity)}">
-          ${escapeHtml(severity)}
-        </span>
-      </div>
-
-      <div class="outbreak-crop">
-        ${escapeHtml(report.crop)} — ${escapeHtml(report.condition)}
-      </div>
-
-      <div class="outbreak-subcounty">
-        ${escapeHtml(report.location.subcounty)}
-      </div>
-
-      <div class="confidence-bar-wrapper">
-        <span class="confidence-label">AI confidence</span>
-        <div class="confidence-bar">
-          <div class="confidence-fill" style="width:${confidence}%"></div>
-        </div>
-        <span class="confidence-percent">${confidence}%</span>
-      </div>
-
-      <div class="outbreak-meta">
-        <span>${escapeHtml(formattedTime)}</span>
-      </div>
-
-      <div class="outbreak-advice">${escapeHtml(report.advice)}</div>
-
-      ${report.advice_luganda ? `
-        <button type="button"
-          class="outbreak-luganda-toggle"
-          aria-expanded="false">
-          View Luganda advice
-        </button>
-        <div class="outbreak-luganda-text" hidden>
-          ${escapeHtml(report.advice_luganda)}
-        </div>
-      ` : ''}
-    `;
-
-    const toggle = item.querySelector('.outbreak-luganda-toggle');
-
-    if (toggle) {
-      const lugandaText = item.querySelector('.outbreak-luganda-text');
-
-      toggle.addEventListener('click', () => {
-        const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
-
-        toggle.setAttribute('aria-expanded', String(!isExpanded));
-        lugandaText.hidden = isExpanded;
-        lugandaText.classList.toggle('visible', !isExpanded);
-        toggle.textContent = isExpanded
-          ? 'View Luganda advice'
-          : 'Hide Luganda advice';
-      });
-    }
-
-    container.appendChild(item);
-  });
-
-  updateMapMarkers();
-}
-
-function clearFilters() {
-  ['district-filter', 'crop-filter', 'severity-filter'].forEach(id => {
-    const dropdown = document.getElementById(id);
-    if (dropdown) dropdown.value = 'all';
-  });
-
-  renderOutbreakFeed();
-}
-
-/* =========================================================
-   GOOGLE MAP INITIALIZATION
-   The Google Maps script calls this function.
-   ========================================================= */
-
-function initGoogleMap() {
-  const mapElement = document.getElementById('google-map');
-  const overlay = document.getElementById('map-loading-overlay');
-
-  if (!mapElement || !window.google?.maps) {
-    console.error('Google Maps could not be initialized.');
-    if (overlay) {
-      overlay.classList.remove('hidden');
-      overlay.innerHTML = `
-        <div class="map-overlay-title">Map unavailable</div>
-        <div class="map-overlay-text">
-          Check your Google Maps API key, enabled APIs, and billing settings.
-        </div>
-      `;
-    }
-    return;
+    document.getElementById('pin-card-body').textContent = info.summary + extra;
+    card.hidden = false;
   }
 
-  cropMap = new google.maps.Map(mapElement, {
-    center: { lat: 0.3476, lng: 32.5825 },
-    zoom: 7,
-    mapTypeControl: false,
-    streetViewControl: false,
-    fullscreenControl: true,
-    styles: [
-      {
-        featureType: 'poi',
-        stylers: [{ visibility: 'off' }]
-      },
-      {
-        featureType: 'transit',
-        stylers: [{ visibility: 'off' }]
-      }
-    ]
-  });
+  // Navigation switching
+  function switchView(viewName) {
+    state.activeNav = viewName;
 
-  if (overlay) overlay.classList.add('hidden');
+    document.querySelectorAll('.sidebar nav button').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-nav') === viewName);
+    });
 
-  // Data may have loaded before or after the map.
-  if (allReports.length > 0) {
-    placeMarkersFromReports();
+    const statsSection = document.getElementById('stats-section');
+    const dashboardGrid = document.getElementById('dashboard-grid');
+    const threatPanel = document.getElementById('threat-panel');
+    const reportsView = document.getElementById('reports-view');
+    const settingsView = document.getElementById('settings-view');
+
+    statsSection.hidden = viewName === 'settings';
+    dashboardGrid.hidden = viewName === 'reports' || viewName === 'settings';
+    reportsView.hidden = viewName !== 'reports';
+    settingsView.hidden = viewName !== 'settings';
+
+    if (viewName === 'map') {
+      dashboardGrid.classList.add('map-expanded');
+      threatPanel.hidden = true;
+    } else {
+      dashboardGrid.classList.remove('map-expanded');
+      threatPanel.hidden = false;
+    }
+
+    if (viewName === 'reports') {
+      renderReportsView();
+    } else if (viewName === 'settings') {
+      checkApiHealth();
+    }
   }
-}
 
-/* =========================================================
-   MAP MARKERS
-   ========================================================= */
+  // Load seed_data.json + optional live /scans
+  async function loadInitialReports() {
+    let seedReports = [];
+    try {
+      const res = await fetch('./seed_data.json', { cache: 'no-store' });
+      if (res.ok) {
+        const arr = await res.json();
+        if (Array.isArray(arr)) {
+          seedReports = arr.map(normalizeReport);
+        }
+      }
+    } catch (_) {
+      // ignore if opened via file:// protocol
+    }
 
-function placeMarkersFromReports() {
-  if (!cropMap || !window.google?.maps) return;
+    state.reports = seedReports;
+    populateReportFilters();
+    renderNotifications();
+    renderReportsView();
 
-  // Remove old markers and info windows before rebuilding.
-  cropMapMarkers.forEach(marker => marker.setMap(null));
-  mapInfoWindows.forEach(infoWindow => infoWindow.close());
+    // Quietly try syncing live backend scans as well
+    try {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 2200);
+      const liveRes = await fetch(`${API_BASE}/scans`, { signal: controller.signal });
+      window.clearTimeout(timer);
 
-  cropMapMarkers = [];
-  mapInfoWindows = [];
+      if (liveRes.ok) {
+        const payload = await liveRes.json();
+        const scans = Array.isArray(payload) ? payload : payload.scans;
+        if (Array.isArray(scans) && scans.length > 0) {
+          state.reports = scans.map(normalizeReport);
+          populateReportFilters();
+          renderNotifications();
+          renderReportsView();
+        }
+      }
+    } catch (_) {
+      // Backend not running; seed data remains active
+    }
+  }
 
-  allReports.forEach(report => {
-    const lat = report.location.latitude;
-    const lng = report.location.longitude;
+  async function syncBackendExplicit() {
+    const btn = document.getElementById('btn-sync-backend');
+    btn.disabled = true;
+    btn.textContent = 'Syncing...';
 
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      console.warn(
-        `Skipping report "${report.id}": valid coordinates are missing.`,
-        report
+    try {
+      const res = await fetch(`${API_BASE}/scans`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const payload = await res.json();
+      const scans = Array.isArray(payload) ? payload : payload.scans;
+      if (Array.isArray(scans)) {
+        state.reports = scans.map(normalizeReport);
+        populateReportFilters();
+        renderNotifications();
+        renderReportsView();
+        btn.textContent = `Synced (${state.reports.length})`;
+      }
+    } catch (_) {
+      btn.textContent = 'Offline (seed data)';
+    } finally {
+      window.setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = 'Sync live API';
+      }, 2000);
+    }
+  }
+
+  function populateSelect(selectId, items, defaultLabel) {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    const prev = sel.value;
+    const unique = [...new Set(items.filter(Boolean))].sort();
+    sel.innerHTML = `<option value="all">${escapeHtml(defaultLabel)}</option>` +
+      unique.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+    if (unique.includes(prev)) sel.value = prev;
+  }
+
+  function populateReportFilters() {
+    populateSelect('rep-filter-district', state.reports.map((r) => r.district), 'All districts');
+    populateSelect('rep-filter-crop', state.reports.map((r) => r.crop), 'All crops');
+    populateSelect('rep-filter-severity', state.reports.map((r) => r.severity), 'All severities');
+  }
+
+  function renderReportsView() {
+    const listEl = document.getElementById('reports-list');
+    if (!listEl) return;
+
+    const fDist = document.getElementById('rep-filter-district')?.value || 'all';
+    const fCrop = document.getElementById('rep-filter-crop')?.value || 'all';
+    const fSev = document.getElementById('rep-filter-severity')?.value || 'all';
+
+    const matches = state.reports.filter((r) => {
+      return (
+        (fDist === 'all' || r.district === fDist) &&
+        (fCrop === 'all' || r.crop === fCrop) &&
+        (fSev === 'all' || r.severity === fSev)
       );
+    });
+
+    document.getElementById('reports-count-text').textContent =
+      `Showing ${matches.length} of ${state.reports.length} confirmed district reports`;
+
+    if (matches.length === 0) {
+      listEl.innerHTML = `<div class="report-row"><p class="report-meta">No matching reports for the selected filters.</p></div>`;
       return;
     }
 
-    const marker = new google.maps.Marker({
-      position: { lat, lng },
-      map: cropMap,
-      title: `${report.crop} — ${report.location.district}`,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        fillColor: markerColor(report.severity),
-        fillOpacity: 0.95,
-        strokeColor: '#ffffff',
-        strokeWeight: 2,
-        scale: report.severity === 'high' ? 10 : 8
+    listEl.innerHTML = matches
+      .map((r) => {
+        const conf = Math.round((r.confidence || 0.9) * 100);
+        const area = r.subcounty ? `${r.district} · ${r.subcounty}` : `${r.district} District`;
+        return `<article class="report-row">
+          <div class="report-row-top">
+            <strong>${escapeHtml(r.crop)} — ${escapeHtml(r.condition)}</strong>
+            <span class="sev-badge ${escapeHtml(r.severity)}">${escapeHtml(r.severity)}</span>
+          </div>
+          <div class="report-meta">${escapeHtml(area)} · AI confidence ${conf}%</div>
+          <p class="report-advice">${escapeHtml(r.advice)}</p>
+          ${r.advice_luganda ? `<p class="report-luganda">Luganda: ${escapeHtml(r.advice_luganda)}</p>` : ''}
+        </article>`;
+      })
+      .join('');
+  }
+
+  function renderNotifications() {
+    const notifList = document.getElementById('notif-list');
+    if (!notifList) return;
+
+    const source = state.reports.length
+      ? state.reports.slice(0, 3)
+      : [
+          { district: 'Masaka', crop: 'Banana / Matooke', condition: 'Banana Bacterial Wilt (BXW)', severity: 'high' },
+          { district: 'Mukono', crop: 'Cassava', condition: 'Cassava Mosaic Disease (CMD)', severity: 'moderate' },
+          { district: 'Mbale', crop: 'Coffee', condition: 'Coffee Leaf Rust (CLR)', severity: 'high' }
+        ];
+
+    notifList.innerHTML = source
+      .map(
+        (item) => `<div class="notif-item">
+          <b>${escapeHtml(item.district)} · ${escapeHtml(item.condition)}</b>
+          <small>${escapeHtml(item.crop)} (${escapeHtml(item.severity)} severity)</small>
+        </div>`
+      )
+      .join('');
+  }
+
+  async function checkApiHealth() {
+    const pill = document.getElementById('api-health-pill');
+    if (!pill) return;
+    pill.textContent = 'Checking status...';
+    pill.classList.remove('online');
+
+    try {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 2500);
+      const res = await fetch(`${API_BASE}/`, { signal: controller.signal });
+      window.clearTimeout(timer);
+      if (res.ok) {
+        const info = await res.json();
+        pill.textContent = `Online · Storage: ${info.storage || 'active'}`;
+        pill.classList.add('online');
+        return;
+      }
+    } catch (_) {
+      // ignore
+    }
+    pill.textContent = 'Offline · Using local seed_data.json';
+  }
+
+  // Export CSV report
+  function downloadReportCsv() {
+    const rows = [
+      ['Section', 'Rank/ID', 'District/Crop', 'Condition', 'Scans/Confidence', 'Trend/Severity']
+    ];
+
+    THREATS.forEach((t) => {
+      rows.push([
+        'Top Threat',
+        String(t.rank),
+        t.crop,
+        t.disease,
+        `${getPeriodScans(t)} scans`,
+        t.trend
+      ]);
+    });
+
+    state.reports.forEach((r) => {
+      rows.push([
+        'Field Report',
+        r.id,
+        `${r.district} (${r.crop})`,
+        r.condition,
+        `${Math.round((r.confidence || 0) * 100)}%`,
+        r.severity
+      ]);
+    });
+
+    const csv = rows
+      .map((row) =>
+        row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')
+      )
+      .join('\r\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'eagles-eye-outbreak-report.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function bindEvents() {
+    // Sidebar navigation
+    document.querySelectorAll('.sidebar nav button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        switchView(btn.getAttribute('data-nav') || 'overview');
+      });
+    });
+
+    // Threat filters
+    document.getElementById('filter-crop').addEventListener('click', () => {
+      state.cropIdx = (state.cropIdx + 1) % CROP_OPTIONS.length;
+      renderThreatsAndPins();
+    });
+    document.getElementById('filter-disease').addEventListener('click', () => {
+      state.diseaseIdx = (state.diseaseIdx + 1) % DISEASE_OPTIONS.length;
+      renderThreatsAndPins();
+    });
+    document.getElementById('filter-period').addEventListener('click', () => {
+      state.periodIdx = (state.periodIdx + 1) % PERIOD_OPTIONS.length;
+      renderThreatsAndPins();
+    });
+
+    // View all threats -> open Reports view
+    document.getElementById('btn-view-all').addEventListener('click', () => {
+      switchView('reports');
+    });
+
+    // Map pins
+    document.querySelectorAll('#map-pins .map-pin').forEach((pin) => {
+      const dist = pin.getAttribute('data-district');
+      pin.addEventListener('click', () => openPinCard(dist));
+      pin.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openPinCard(dist);
+        }
+      });
+    });
+    document.getElementById('btn-close-pin-card').addEventListener('click', () => {
+      document.getElementById('map-pin-card').hidden = true;
+    });
+
+    // Notifications popover
+    const btnNotif = document.getElementById('btn-notification');
+    const notifPopover = document.getElementById('notif-popover');
+    const notifDot = document.getElementById('notif-dot');
+
+    btnNotif.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = notifPopover.hidden;
+      notifPopover.hidden = !willOpen;
+      if (willOpen && notifDot) {
+        notifDot.hidden = true;
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (!notifPopover.hidden && !notifPopover.contains(e.target) && e.target !== btnNotif) {
+        notifPopover.hidden = true;
       }
     });
 
-    marker.reportData = report;
+    // Download CSV report
+    document.getElementById('btn-download').addEventListener('click', downloadReportCsv);
 
-    const infoContent = `
-      <div style="font-family:Arial,sans-serif;max-width:250px;padding:8px;color:#1f2937">
-        <strong>${escapeHtml(report.location.district)} District</strong>
-        <p><strong>${escapeHtml(report.crop)}</strong></p>
-        <p>${escapeHtml(report.condition)}</p>
-        <p>Severity: <strong>${escapeHtml(report.severity)}</strong></p>
-        <p>Area: ${escapeHtml(report.location.subcounty)}</p>
-        <p>AI confidence: ${Math.round(report.confidence * 100)}%</p>
-        <p>${escapeHtml(report.advice)}</p>
-        <p style="font-size:11px;color:#64748b;border-top:1px solid #e5e7eb;padding-top:6px">
-          Demonstration data — not a verified outbreak.
-        </p>
-      </div>
-    `;
-
-    const infoWindow = new google.maps.InfoWindow({
-      content: infoContent
+    // Reports view controls
+    ['rep-filter-district', 'rep-filter-crop', 'rep-filter-severity'].forEach((id) => {
+      document.getElementById(id)?.addEventListener('change', renderReportsView);
     });
-
-    marker.addListener('click', () => {
-      mapInfoWindows.forEach(windowItem => windowItem.close());
-      infoWindow.open({ map: cropMap, anchor: marker });
-    });
-
-    cropMapMarkers.push(marker);
-    mapInfoWindows.push(infoWindow);
-  });
-
-  updateMapMarkers();
-
-  console.info(
-    `Created ${cropMapMarkers.length} map marker(s) from ${allReports.length} report(s).`
-  );
-}
-
-/* =========================================================
-   KEEP MARKERS IN SYNC WITH FILTERS
-   ========================================================= */
-
-function updateMapMarkers() {
-  if (!cropMap || cropMapMarkers.length === 0) return;
-
-  const district = document.getElementById('district-filter')?.value ?? 'all';
-  const crop = document.getElementById('crop-filter')?.value ?? 'all';
-  const severity = document.getElementById('severity-filter')?.value ?? 'all';
-
-  cropMapMarkers.forEach(marker => {
-    const report = marker.reportData;
-
-    const matchesDistrict =
-      district === 'all' || report.location.district === district;
-
-    const matchesCrop =
-      crop === 'all' || report.crop === crop;
-
-    const matchesSeverity =
-      severity === 'all' || report.severity === severity;
-
-    marker.setVisible(
-      matchesDistrict && matchesCrop && matchesSeverity
-    );
-  });
-}
-
-/* =========================================================
-   BACKEND SYNC
-   ========================================================= */
-
-async function syncBackend() {
-  const button = document.getElementById('btn-fetch-backend');
-  if (!button) return;
-
-  const originalText = button.textContent;
-  button.disabled = true;
-  button.textContent = 'Syncing...';
-  button.classList.add('loading');
-
-  try {
-    const response = await fetch('http://localhost:8080/scans');
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    // Accept either an array or an object containing a scans array.
-    const scans = Array.isArray(data) ? data : data.scans;
-
-    if (!Array.isArray(scans)) {
-      throw new Error('Backend response must be an array or contain a scans array.');
-    }
-
-    allReports = scans.map(normalizeReport);
-
-    updateKPIs();
-    populateFilter('district-filter', allReports.map(r => r.location.district));
-    populateFilter('crop-filter', allReports.map(r => r.crop));
-    populateFilter('severity-filter', allReports.map(r => r.severity));
-
-    renderOutbreakFeed();
-
-    if (cropMap) {
-      placeMarkersFromReports();
-    }
-
-    showToast(`Synced ${allReports.length} records from the backend.`, 'success');
-  } catch (error) {
-    console.error('Backend sync failed:', error);
-
-    showToast(
-      `Backend sync failed: ${error.message}. Demo data remains available if loaded.`,
-      'error',
-      6000
-    );
-  } finally {
-    button.disabled = false;
-    button.textContent = originalText;
-    button.classList.remove('loading');
+    document.getElementById('btn-sync-backend').addEventListener('click', syncBackendExplicit);
+    document.getElementById('btn-check-health').addEventListener('click', checkApiHealth);
   }
-}
 
-/* =========================================================
-   INITIALIZATION
-   ========================================================= */
+  function init() {
+    bindEvents();
+    renderThreatsAndPins();
+    loadInitialReports();
+  }
 
-function initializeDashboard() {
-  document.getElementById('district-filter')
-    ?.addEventListener('change', renderOutbreakFeed);
-
-  document.getElementById('crop-filter')
-    ?.addEventListener('change', renderOutbreakFeed);
-
-  document.getElementById('severity-filter')
-    ?.addEventListener('change', renderOutbreakFeed);
-
-  document.getElementById('btn-fetch-backend')
-    ?.addEventListener('click', syncBackend);
-
-  loadOutbreakFeed();
-}
-
-// Google Maps may call initGoogleMap before or after this event.
-document.addEventListener('DOMContentLoaded', initializeDashboard);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();

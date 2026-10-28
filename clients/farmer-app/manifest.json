@@ -1,12 +1,12 @@
 {
-  "name": "Eagles Eye — Farmer AI Crop Doctor",
+  "name": "Eagles Eye — Your Crop Doctor in Your Pocket",
   "short_name": "Eagles Eye",
-  "description": "Spot crop problems early and get practical agricultural advice in English and Luganda",
+  "description": "Spot crop problems early and get simple, practical advice in English and Luganda.",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F7F9F6",
-  "theme_color": "#1D5C2B",
+  "background_color": "#f7f9f4",
+  "theme_color": "#2e7d32",
   "icons": [
     {
       "src": "assets/logo.png",
