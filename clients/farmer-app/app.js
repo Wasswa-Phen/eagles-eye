@@ -458,6 +458,21 @@
     offlineSvg.hidden = false;
   }
 
+  function refreshNearbyMapViewport() {
+    if (state.screen !== 'nearby') return;
+    const farm = DISTRICT_COORDS[state.district] || DISTRICT_COORDS.Masaka;
+    const outbreak = { lat: farm.lat + 0.048, lng: farm.lng + 0.052 };
+    const center = { lat: (farm.lat + outbreak.lat) / 2, lng: (farm.lng + outbreak.lng) / 2 };
+
+    if (state.nearbyMapMode === 'google' && state.nearbyGoogleMap && window.google?.maps) {
+      google.maps.event.trigger(state.nearbyGoogleMap, 'resize');
+      state.nearbyGoogleMap.setCenter(center);
+    } else if (state.nearbyMapMode === 'leaflet' && state.nearbyLeafletMap) {
+      state.nearbyLeafletMap.invalidateSize();
+      state.nearbyLeafletMap.setView([center.lat, center.lng], 12, { animate: false });
+    }
+  }
+
   window.initFarmerGoogleMap = function () {
     state.googleReady = true;
     if (state.screen === 'nearby') {
@@ -997,6 +1012,27 @@
     document.getElementById('btn-history-back').addEventListener('click', () => showScreen('welcome'));
     document.getElementById('btn-history-bell').addEventListener('click', () => showScreen('nearby'));
     document.getElementById('btn-history-scan').addEventListener('click', () => showScreen('scan'));
+
+    // Dismiss open sheets on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        sheetDealers.hidden = true;
+        sheetTips.hidden = true;
+      }
+    });
+
+    // Keep real Uganda map sharp on orientation change / viewport resize
+    const nearbyMapBox = document.getElementById('nearby-real-map');
+    if (nearbyMapBox && typeof ResizeObserver === 'function') {
+      let resizeTimer = null;
+      const observer = new ResizeObserver(() => {
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(refreshNearbyMapViewport, 120);
+      });
+      observer.observe(nearbyMapBox);
+    } else {
+      window.addEventListener('resize', refreshNearbyMapViewport);
+    }
   }
 
   function registerServiceWorker() {

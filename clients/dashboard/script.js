@@ -833,6 +833,16 @@
     renderThreatsAndPins();
     loadInitialReports();
 
+    const mapContainer = document.getElementById('uganda-real-map');
+    if (mapContainer && 'ResizeObserver' in window) {
+      let resizeTimer = null;
+      const observer = new ResizeObserver(() => {
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(refreshMapViewport, 120);
+      });
+      observer.observe(mapContainer);
+    }
+
     // If Google Maps already loaded before DOMContentLoaded, initialize right away;
     // otherwise give Google Maps 3.5s before activating Leaflet real Uganda map fallback.
     if (window.google?.maps && !state.mapEngine) {
