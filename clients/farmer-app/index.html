@@ -9,6 +9,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="apple-touch-icon" href="assets/logo.png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -258,8 +259,9 @@
           </div>
         </div>
 
-        <div class="mini-map">
-          <svg viewBox="0 0 350 245" aria-label="Map showing nearby outbreak">
+        <div class="mini-map" id="nearby-mini-map-box">
+          <div id="nearby-real-map" class="nearby-real-map" aria-label="Real Uganda map showing nearby outbreak"></div>
+          <svg id="nearby-offline-svg" viewBox="0 0 350 245" aria-label="Map showing nearby outbreak">
             <path class="road" d="M-10 180C80 130 110 180 185 105S300 35 370 70"/>
             <path class="road minor" d="M45-10c25 80 5 150 80 270M270-10c-30 100-5 180 45 260"/>
             <circle class="outbreak-ring" cx="240" cy="95" r="42"/>
@@ -361,6 +363,11 @@
 
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="app.js"></script>
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGAxLyJ9flSpu04K-gKBVI0ysm8qbpxds&callback=initFarmerGoogleMap&loading=async"
+    onerror="window.handleFarmerMapError && window.handleFarmerMapError()">
+  </script>
 </body>
 </html>

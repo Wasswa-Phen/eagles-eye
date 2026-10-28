@@ -234,6 +234,16 @@
     ['Use approved biopesticides', 'Ask your agro-dealer for neem-based or registered selective treatments.', 'Kozesa eddagala erikakasiddwa', 'Saba eddagala lya neem oba erikakasiddwa ku dduuka ly’ebyobulimi.']
   ];
 
+  const DISTRICT_COORDS = {
+    Masaka: { lat: -0.3411, lng: 31.7361 },
+    Mukono: { lat: 0.3549, lng: 32.7523 },
+    Mbale: { lat: 1.0784, lng: 34.1754 },
+    Mbarara: { lat: -0.6072, lng: 30.6545 },
+    Gulu: { lat: 2.7746, lng: 32.2990 },
+    Wakiso: { lat: 0.4044, lng: 32.4594 },
+    Iganga: { lat: 0.6090, lng: 33.4680 }
+  };
+
   const state = {
     screen: 'welcome',
     previousScreen: 'welcome',
@@ -244,7 +254,14 @@
     previewUrl: null,
     currentDiagnosis: cloneDiagnosis(CATALOG.cassava),
     isAnalysing: false,
-    isSpeaking: false
+    isSpeaking: false,
+    googleReady: false,
+    googleFailed: false,
+    nearbyMapMode: null,
+    nearbyGoogleMap: null,
+    nearbyGoogleOverlays: [],
+    nearbyLeafletMap: null,
+    nearbyLeafletGroup: null
   };
 
   function cloneDiagnosis(item) {
@@ -284,8 +301,186 @@
       renderHistory();
     } else if (nextScreen === 'result') {
       renderResult(state.currentDiagnosis);
+    } else if (nextScreen === 'nearby') {
+      renderNearbyUgandaMap();
     }
   }
+
+  function renderNearbyUgandaMap() {
+    const mapBox = document.getElementById('nearby-real-map');
+    const offlineSvg = document.getElementById('nearby-offline-svg');
+    if (!mapBox) return;
+
+    const farm = DISTRICT_COORDS[state.district] || DISTRICT_COORDS.Masaka;
+    // ~8 km northeast of the farmer's Ugandan district center
+    const outbreak = { lat: farm.lat + 0.048, lng: farm.lng + 0.052 };
+    const center = { lat: (farm.lat + outbreak.lat) / 2, lng: (farm.lng + outbreak.lng) / 2 };
+    const t = I18N[state.lang];
+
+    if (!state.googleFailed && window.google?.maps) {
+      offlineSvg.hidden = true;
+      mapBox.hidden = false;
+
+      if (!state.nearbyGoogleMap) {
+        state.nearbyMapMode = 'google';
+        state.nearbyGoogleMap = new google.maps.Map(mapBox, {
+          center,
+          zoom: 12,
+          disableDefaultUI: true,
+          zoomControl: true,
+          styles: [
+            { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+            { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+            { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#e6f0df' }] }
+          ]
+        });
+      } else {
+        google.maps.event.trigger(state.nearbyGoogleMap, 'resize');
+        state.nearbyGoogleMap.setCenter(center);
+      }
+
+      state.nearbyGoogleOverlays.forEach((o) => o.setMap(null));
+      state.nearbyGoogleOverlays = [];
+
+      const ring = new google.maps.Circle({
+        map: state.nearbyGoogleMap,
+        center: outbreak,
+        radius: 2200,
+        strokeColor: '#c62828',
+        strokeOpacity: 0.45,
+        strokeWeight: 2,
+        fillColor: '#c62828',
+        fillOpacity: 0.16
+      });
+
+      const youMarker = new google.maps.Marker({
+        map: state.nearbyGoogleMap,
+        position: farm,
+        title: t.mapYou,
+        label: { text: t.mapYou, color: '#1b1b1b', fontSize: '12px', fontWeight: '700' },
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: '#2e7d32',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3.5,
+          scale: 8,
+          labelOrigin: new google.maps.Point(0, 2.3)
+        }
+      });
+
+      const pestMarker = new google.maps.Marker({
+        map: state.nearbyGoogleMap,
+        position: outbreak,
+        title: `${t.mapPest} (${t.mapDist})`,
+        label: { text: `${t.mapPest} · ${t.mapDist}`, color: '#c62828', fontSize: '12px', fontWeight: '800' },
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: '#c62828',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3.5,
+          scale: 8.5,
+          labelOrigin: new google.maps.Point(0, -2.3)
+        }
+      });
+
+      state.nearbyGoogleOverlays.push(ring, youMarker, pestMarker);
+      return;
+    }
+
+    if (window.L && navigator.onLine !== false) {
+      offlineSvg.hidden = true;
+      mapBox.hidden = false;
+
+      if (!state.nearbyLeafletMap) {
+        state.nearbyMapMode = 'leaflet';
+        state.nearbyLeafletMap = L.map(mapBox, {
+          center: [center.lat, center.lng],
+          zoom: 12,
+          zoomControl: true,
+          attributionControl: false
+        });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(state.nearbyLeafletMap);
+        state.nearbyLeafletGroup = L.layerGroup().addTo(state.nearbyLeafletMap);
+      } else {
+        window.setTimeout(() => {
+          state.nearbyLeafletMap.invalidateSize();
+          state.nearbyLeafletMap.setView([center.lat, center.lng], 12);
+        }, 60);
+      }
+
+      state.nearbyLeafletGroup.clearLayers();
+
+      L.circle([outbreak.lat, outbreak.lng], {
+        radius: 2200,
+        color: '#c62828',
+        weight: 2,
+        opacity: 0.5,
+        fillColor: '#c62828',
+        fillOpacity: 0.18
+      }).addTo(state.nearbyLeafletGroup);
+
+      L.circleMarker([farm.lat, farm.lng], {
+        radius: 8,
+        color: '#ffffff',
+        weight: 3,
+        fillColor: '#2e7d32',
+        fillOpacity: 1
+      })
+        .bindTooltip(escapeHtml(t.mapYou), {
+          permanent: true,
+          direction: 'bottom',
+          offset: [0, 6],
+          className: 'nearby-map-label'
+        })
+        .addTo(state.nearbyLeafletGroup);
+
+      L.circleMarker([outbreak.lat, outbreak.lng], {
+        radius: 8.5,
+        color: '#ffffff',
+        weight: 3,
+        fillColor: '#c62828',
+        fillOpacity: 1
+      })
+        .bindTooltip(`${escapeHtml(t.mapPest)} · ${escapeHtml(t.mapDist)}`, {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -6],
+          className: 'nearby-map-label'
+        })
+        .addTo(state.nearbyLeafletGroup);
+      return;
+    }
+
+    // Complete offline fallback
+    mapBox.hidden = true;
+    offlineSvg.hidden = false;
+  }
+
+  window.initFarmerGoogleMap = function () {
+    state.googleReady = true;
+    if (state.screen === 'nearby') {
+      renderNearbyUgandaMap();
+    }
+  };
+  window.handleFarmerMapError = function () {
+    state.googleFailed = true;
+    if (state.screen === 'nearby') {
+      renderNearbyUgandaMap();
+    }
+  };
+  window.gm_authFailure = function () {
+    state.googleFailed = true;
+    if (state.nearbyGoogleMap) {
+      state.nearbyGoogleMap = null;
+      const mapBox = document.getElementById('nearby-real-map');
+      if (mapBox) mapBox.innerHTML = '';
+    }
+    if (state.screen === 'nearby') {
+      renderNearbyUgandaMap();
+    }
+  };
 
   // Language handling
   function setLanguage(lang) {
@@ -344,6 +539,9 @@
     renderResult(state.currentDiagnosis);
     renderDealers();
     renderPreventionTips();
+    if (state.screen === 'nearby') {
+      renderNearbyUgandaMap();
+    }
   }
 
   // Convert plain advice sentences into 1–3 structured steps when live API responds

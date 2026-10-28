@@ -6,6 +6,7 @@
   <title>Eagles Eye — Outbreak Surveillance Dashboard</title>
   <meta name="description" content="Eagles Eye crop disease surveillance dashboard for Ugandan agricultural extension officers.">
   <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -141,45 +142,12 @@
             <span class="live" id="live-indicator"><i></i> Live data</span>
           </div>
 
-          <div class="uganda-map">
-            <svg viewBox="0 0 610 510" aria-label="Uganda outbreak heat map">
-              <path class="country" d="M181 43 273 58l66-34 65 47 80 8 30 70-35 78 24 76-60 56-35 106-97 20-52-52-77-11-29-78-57-52 36-80-20-77Z"/>
-              <path class="district d1" d="m181 43 92 15 22 84-65 46-98-33-20-77Z"/>
-              <path class="district d2" d="m295 142 44-118 65 47 80 8 30 70-85 34Z"/>
-              <path class="district d3" d="m230 188 65-46 134 41-22 93-126 20Z"/>
-              <path class="district d4" d="m132 155 98 33 51 108-65 67-63-29-57-52Z"/>
-              <path class="district d5" d="m281 296 126-20 76 27-60 56-35 106-77 20-52-52-43-70Z"/>
-              <g id="map-pins">
-                <g class="map-pin hot" data-district="Masaka" tabindex="0" role="button" aria-label="Masaka hotspot">
-                  <circle cx="322" cy="333" r="17"/>
-                  <circle cx="322" cy="333" r="6"/>
-                  <text x="344" y="338">Masaka</text>
-                </g>
-                <g class="map-pin warn" data-district="Mbale" tabindex="0" role="button" aria-label="Mbale alert">
-                  <circle cx="410" cy="215" r="17"/>
-                  <circle cx="410" cy="215" r="6"/>
-                  <text x="432" y="220">Mbale</text>
-                </g>
-                <g class="map-pin safe" data-district="Gulu" tabindex="0" role="button" aria-label="Gulu low risk">
-                  <circle cx="235" cy="122" r="17"/>
-                  <circle cx="235" cy="122" r="6"/>
-                  <text x="257" y="127">Gulu</text>
-                </g>
-                <g class="map-pin warn" data-district="Mbarara" tabindex="0" role="button" aria-label="Mbarara alert">
-                  <circle cx="228" cy="350" r="17"/>
-                  <circle cx="228" cy="350" r="6"/>
-                  <text x="250" y="355">Mbarara</text>
-                </g>
-              </g>
-            </svg>
+          <div class="uganda-map" id="uganda-map-wrapper">
+            <div id="uganda-real-map" class="real-map-canvas" aria-label="Real Uganda outbreak heat map"></div>
 
-            <div class="map-pin-card" id="map-pin-card" hidden>
-              <div class="map-pin-card-head">
-                <strong id="pin-card-title">Masaka</strong>
-                <button type="button" class="map-pin-card-close" id="btn-close-pin-card" aria-label="Close">✕</button>
-              </div>
-              <span class="sev-badge high" id="pin-card-badge">High</span>
-              <p id="pin-card-body"></p>
+            <div class="map-loading" id="map-loading">
+              <span class="map-spinner"></span>
+              <span>Loading Uganda map...</span>
             </div>
 
             <div class="legend">
@@ -268,6 +236,11 @@
     </main>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="script.js"></script>
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGAxLyJ9flSpu04K-gKBVI0ysm8qbpxds&libraries=visualization&callback=initGoogleMap&loading=async"
+    onerror="window.handleGoogleMapsError && window.handleGoogleMapsError()">
+  </script>
 </body>
 </html>

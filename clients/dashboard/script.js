@@ -2,6 +2,123 @@
   'use strict';
 
   const API_BASE = 'http://localhost:8080';
+  const UGANDA_CENTER = { lat: 1.3733, lng: 32.2903 };
+  const UGANDA_BOUNDS = {
+    north: 4.5,
+    south: -1.65,
+    west: 29.2,
+    east: 35.3
+  };
+
+  // Real WGS84 coordinates for Ugandan districts (from backend/districts.py)
+  const UGANDA_DISTRICTS = {
+    Masaka: { lat: -0.3411, lng: 31.7361 },
+    Mukono: { lat: 0.3549, lng: 32.7523 },
+    Mbale: { lat: 1.0784, lng: 34.1754 },
+    Mbarara: { lat: -0.6072, lng: 30.6545 },
+    Gulu: { lat: 2.7746, lng: 32.2990 },
+    Wakiso: { lat: 0.4044, lng: 32.4594 },
+    Kampala: { lat: 0.3476, lng: 32.5825 },
+    Iganga: { lat: 0.6090, lng: 33.4680 },
+    Jinja: { lat: 0.4244, lng: 33.2042 },
+    Lira: { lat: 2.2499, lng: 32.8998 },
+    Soroti: { lat: 1.7150, lng: 33.6110 },
+    Kasese: { lat: 0.1830, lng: 30.0880 },
+    Hoima: { lat: 1.4350, lng: 31.3524 },
+    Arua: { lat: 3.0200, lng: 30.9110 },
+    Kabale: { lat: -1.2490, lng: 29.9900 }
+  };
+
+  const OUTBREAK_HOTSPOTS = [
+    {
+      district: 'Masaka',
+      lat: -0.3411,
+      lng: 31.7361,
+      crop: 'Cassava',
+      disease: 'Cassava mosaic',
+      severity: 'high',
+      scans: 412,
+      weight: 5,
+      summary: 'High outbreak intensity across Buwunga & Nyendo. Banana wilt & Cassava mosaic active.'
+    },
+    {
+      district: 'Mbale',
+      lat: 1.0784,
+      lng: 34.1754,
+      crop: 'Coffee',
+      disease: 'Coffee leaf rust',
+      severity: 'high',
+      scans: 268,
+      weight: 4,
+      summary: 'Coffee leaf rust & Fall armyworm confirmed across Bungokho slopes.'
+    },
+    {
+      district: 'Mbarara',
+      lat: -0.6072,
+      lng: 30.6545,
+      crop: 'Banana',
+      disease: 'Banana wilt',
+      severity: 'moderate',
+      scans: 219,
+      weight: 3.2,
+      summary: 'Moderate Banana bacterial wilt clusters; extension officers deployed.'
+    },
+    {
+      district: 'Mukono',
+      lat: 0.3549,
+      lng: 32.7523,
+      crop: 'Cassava',
+      disease: 'Cassava mosaic',
+      severity: 'moderate',
+      scans: 184,
+      weight: 3,
+      summary: 'Cassava mosaic & whitefly advisories issued in Goma subcounty.'
+    },
+    {
+      district: 'Iganga',
+      lat: 0.6090,
+      lng: 33.4680,
+      crop: 'Maize',
+      disease: 'Fall armyworm',
+      severity: 'moderate',
+      scans: 163,
+      weight: 2.8,
+      summary: 'Fall armyworm scouting alerts active across Busoga maize belt.'
+    },
+    {
+      district: 'Gulu',
+      lat: 2.7746,
+      lng: 32.2990,
+      crop: 'Maize',
+      disease: 'Fall armyworm',
+      severity: 'low',
+      scans: 94,
+      weight: 1.5,
+      summary: 'Low outbreak risk; early maize scouting mostly healthy foliage.'
+    },
+    {
+      district: 'Lira',
+      lat: 2.2499,
+      lng: 32.8998,
+      crop: 'Cassava',
+      disease: 'Cassava mosaic',
+      severity: 'low',
+      scans: 78,
+      weight: 1.4,
+      summary: 'Isolated Cassava mosaic reports; clean NASE-14 cuttings distributed.'
+    },
+    {
+      district: 'Kasese',
+      lat: 0.1830,
+      lng: 30.0880,
+      crop: 'Coffee',
+      disease: 'Coffee leaf rust',
+      severity: 'moderate',
+      scans: 112,
+      weight: 2.2,
+      summary: 'Canopy pruning & copper fungicide advisories active in Rwenzori foothills.'
+    }
+  ];
 
   const THREATS = [
     {
@@ -12,8 +129,7 @@
       scans7d: 142,
       scansToday: 24,
       trend: '↑ 18%',
-      trendClass: 'up',
-      districts: ['Masaka', 'Mukono', 'Mbarara']
+      trendClass: 'up'
     },
     {
       rank: 2,
@@ -23,8 +139,7 @@
       scans7d: 96,
       scansToday: 17,
       trend: '↑ 12%',
-      trendClass: 'up',
-      districts: ['Mbale', 'Gulu', 'Masaka']
+      trendClass: 'up'
     },
     {
       rank: 3,
@@ -34,8 +149,7 @@
       scans7d: 51,
       scansToday: 8,
       trend: '↓ 4%',
-      trendClass: 'down',
-      districts: ['Masaka', 'Mbarara']
+      trendClass: 'down'
     },
     {
       rank: 4,
@@ -45,33 +159,9 @@
       scans7d: 39,
       scansToday: 6,
       trend: '→ 0%',
-      trendClass: '',
-      districts: ['Mbale']
+      trendClass: ''
     }
   ];
-
-  const DISTRICT_SUMMARIES = {
-    Masaka: {
-      severity: 'high',
-      label: 'High risk',
-      summary: '412 confirmed scans · Banana bacterial wilt & Cassava mosaic hotspots active in Buwunga.'
-    },
-    Mbale: {
-      severity: 'moderate',
-      label: 'Moderate risk',
-      summary: '268 confirmed scans · Coffee leaf rust & Fall armyworm reported across Bungokho.'
-    },
-    Gulu: {
-      severity: 'healthy',
-      label: 'Low risk',
-      summary: '94 confirmed scans · Early maize scouting active; mostly healthy crop foliage.'
-    },
-    Mbarara: {
-      severity: 'moderate',
-      label: 'Moderate risk',
-      summary: '219 confirmed scans · Banana wilt & Cassava mosaic advisories issued to cooperatives.'
-    }
-  };
 
   const CROP_OPTIONS = ['All crops', 'Cassava', 'Maize', 'Banana', 'Coffee'];
   const DISEASE_OPTIONS = ['All diseases', 'Cassava mosaic', 'Fall armyworm', 'Banana wilt', 'Coffee leaf rust'];
@@ -82,7 +172,15 @@
     cropIdx: 0,
     diseaseIdx: 0,
     periodIdx: 0,
-    reports: []
+    reports: [],
+    mapEngine: null, // 'google' | 'leaflet'
+    googleMap: null,
+    googleMarkers: [],
+    googleCircles: [],
+    googleHeatmap: null,
+    googleInfoWindow: null,
+    leafletMap: null,
+    leafletLayerGroup: null
   };
 
   function escapeHtml(value) {
@@ -94,8 +192,270 @@
       .replace(/'/g, '&#39;');
   }
 
+  function severityColor(sev) {
+    const s = String(sev || '').toLowerCase();
+    if (s === 'high') return '#c62828';
+    if (s === 'moderate') return '#f9a825';
+    return '#2e7d32';
+  }
+
+  function hideMapLoading() {
+    const loader = document.getElementById('map-loading');
+    if (loader) loader.hidden = true;
+  }
+
+  function getFilteredHotspots() {
+    const selectedCrop = CROP_OPTIONS[state.cropIdx];
+    const selectedDisease = DISEASE_OPTIONS[state.diseaseIdx];
+
+    // Merge canonical Uganda hotspots with any live backend reports from new districts
+    const byDistrict = new Map();
+    OUTBREAK_HOTSPOTS.forEach((h) => byDistrict.set(h.district.toLowerCase(), { ...h }));
+
+    state.reports.forEach((r) => {
+      const key = r.district.toLowerCase();
+      if (!byDistrict.has(key) && Number.isFinite(r.latitude) && Number.isFinite(r.longitude)) {
+        byDistrict.set(key, {
+          district: r.district,
+          lat: r.latitude,
+          lng: r.longitude,
+          crop: r.crop.includes('Banana') ? 'Banana' : r.crop,
+          disease: r.condition,
+          severity: r.severity,
+          scans: 1,
+          weight: r.severity === 'high' ? 4 : 2,
+          summary: r.advice
+        });
+      }
+    });
+
+    return [...byDistrict.values()].filter((spot) => {
+      const cropOk = selectedCrop === 'All crops' || spot.crop.toLowerCase().includes(selectedCrop.toLowerCase());
+      const disOk = selectedDisease === 'All diseases' || spot.disease.toLowerCase().includes(selectedDisease.toLowerCase());
+      return cropOk && disOk;
+    });
+  }
+
+  function buildPopupHtml(spot) {
+    return `<div class="ug-info-popup">
+      <strong>${escapeHtml(spot.district)} District</strong>
+      <div class="ug-pop-crop">${escapeHtml(spot.crop)} · ${escapeHtml(spot.disease)} (${escapeHtml(spot.severity)})</div>
+      <p>${escapeHtml(spot.scans)} confirmed scans. ${escapeHtml(spot.summary)}</p>
+    </div>`;
+  }
+
+  // =========================================================
+  // REAL UGANDA MAP — GOOGLE MAPS ENGINE + LEAFLET FALLBACK
+  // =========================================================
+  function initGoogleMapInstance() {
+    const el = document.getElementById('uganda-real-map');
+    if (!el || !window.google?.maps) {
+      initLeafletFallback();
+      return;
+    }
+
+    state.mapEngine = 'google';
+    state.googleMap = new google.maps.Map(el, {
+      center: UGANDA_CENTER,
+      zoom: 7,
+      minZoom: 6,
+      maxZoom: 14,
+      restriction: {
+        latLngBounds: UGANDA_BOUNDS,
+        strictBounds: false
+      },
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+      zoomControl: true,
+      styles: [
+        { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+        { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+        { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#eef4e8' }] },
+        { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#cfe4f2' }] },
+        { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ color: '#5c7c58' }, { weight: 2 }] }
+      ]
+    });
+
+    state.googleInfoWindow = new google.maps.InfoWindow();
+    hideMapLoading();
+    renderMapLayers();
+  }
+
+  function initLeafletFallback() {
+    if (state.mapEngine === 'leaflet' && state.leafletMap) return;
+    const el = document.getElementById('uganda-real-map');
+    if (!el || !window.L) return;
+
+    state.mapEngine = 'leaflet';
+    el.innerHTML = '';
+
+    state.leafletMap = L.map(el, {
+      center: [UGANDA_CENTER.lat, UGANDA_CENTER.lng],
+      zoom: 7,
+      minZoom: 6,
+      maxZoom: 15,
+      maxBounds: [
+        [UGANDA_BOUNDS.south - 1, UGANDA_BOUNDS.west - 1],
+        [UGANDA_BOUNDS.north + 1, UGANDA_BOUNDS.east + 1]
+      ],
+      zoomControl: false
+    });
+
+    L.control.zoom({ position: 'topright' }).addTo(state.leafletMap);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(state.leafletMap);
+
+    state.leafletLayerGroup = L.layerGroup().addTo(state.leafletMap);
+    hideMapLoading();
+    renderMapLayers();
+  }
+
+  function renderMapLayers() {
+    const spots = getFilteredHotspots();
+
+    if (state.mapEngine === 'google' && state.googleMap && window.google?.maps) {
+      state.googleMarkers.forEach((m) => m.setMap(null));
+      state.googleCircles.forEach((c) => c.setMap(null));
+      state.googleMarkers = [];
+      state.googleCircles = [];
+      if (state.googleHeatmap) {
+        state.googleHeatmap.setMap(null);
+      }
+
+      if (google.maps.visualization?.HeatmapLayer) {
+        const heatPoints = spots.map((s) => ({
+          location: new google.maps.LatLng(s.lat, s.lng),
+          weight: s.weight
+        }));
+        state.googleHeatmap = new google.maps.visualization.HeatmapLayer({
+          data: heatPoints,
+          map: state.googleMap,
+          radius: 48,
+          opacity: 0.62,
+          gradient: [
+            'rgba(105, 170, 100, 0)',
+            '#69aa64',
+            '#f3c34f',
+            '#e8893d',
+            '#d9583e'
+          ]
+        });
+      }
+
+      spots.forEach((spot) => {
+        const color = severityColor(spot.severity);
+
+        const halo = new google.maps.Circle({
+          strokeColor: color,
+          strokeOpacity: 0.35,
+          strokeWeight: 1.5,
+          fillColor: color,
+          fillOpacity: 0.16,
+          map: state.googleMap,
+          center: { lat: spot.lat, lng: spot.lng },
+          radius: spot.severity === 'high' ? 34000 : 25000
+        });
+        state.googleCircles.push(halo);
+
+        const marker = new google.maps.Marker({
+          position: { lat: spot.lat, lng: spot.lng },
+          map: state.googleMap,
+          title: `${spot.district} — ${spot.disease}`,
+          label: {
+            text: spot.district,
+            color: '#1b1b1b',
+            fontSize: '12px',
+            fontWeight: '800'
+          },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: color,
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 3,
+            scale: spot.severity === 'high' ? 9 : 7.5,
+            labelOrigin: new google.maps.Point(0, -2.2)
+          }
+        });
+
+        marker.addListener('click', () => {
+          state.googleInfoWindow.setContent(buildPopupHtml(spot));
+          state.googleInfoWindow.open({ map: state.googleMap, anchor: marker });
+        });
+
+        state.googleMarkers.push(marker);
+      });
+    } else if (state.mapEngine === 'leaflet' && state.leafletMap && state.leafletLayerGroup) {
+      state.leafletLayerGroup.clearLayers();
+
+      spots.forEach((spot) => {
+        const color = severityColor(spot.severity);
+
+        L.circle([spot.lat, spot.lng], {
+          radius: spot.severity === 'high' ? 35000 : 25000,
+          color,
+          weight: 1.5,
+          opacity: 0.45,
+          fillColor: color,
+          fillOpacity: 0.22
+        }).addTo(state.leafletLayerGroup);
+
+        const pin = L.circleMarker([spot.lat, spot.lng], {
+          radius: spot.severity === 'high' ? 9 : 7,
+          color: '#ffffff',
+          weight: 3,
+          fillColor: color,
+          fillOpacity: 1
+        })
+          .bindPopup(buildPopupHtml(spot))
+          .bindTooltip(escapeHtml(spot.district), {
+            permanent: true,
+            direction: 'right',
+            offset: [8, 0],
+            className: 'leaflet-district-label'
+          });
+
+        pin.addTo(state.leafletLayerGroup);
+      });
+    }
+  }
+
+  function refreshMapViewport() {
+    window.setTimeout(() => {
+      if (state.mapEngine === 'google' && state.googleMap && window.google?.maps) {
+        google.maps.event.trigger(state.googleMap, 'resize');
+        state.googleMap.setCenter(UGANDA_CENTER);
+      } else if (state.mapEngine === 'leaflet' && state.leafletMap) {
+        state.leafletMap.invalidateSize();
+        state.leafletMap.setView([UGANDA_CENTER.lat, UGANDA_CENTER.lng], 7);
+      }
+    }, 80);
+  }
+
+  // Expose Google Maps callbacks & auth-failure fallback
+  window.initGoogleMap = function () {
+    initGoogleMapInstance();
+  };
+  window.gm_authFailure = function () {
+    initLeafletFallback();
+  };
+  window.handleGoogleMapsError = function () {
+    initLeafletFallback();
+  };
+
+  // =========================================================
+  // THREATS, REPORTS & ACTIONS
+  // =========================================================
   function normalizeReport(raw, idx) {
     const loc = raw.location || {};
+    const districtName = String(loc.district || raw.district || 'Masaka');
+    const knownCoords = UGANDA_DISTRICTS[districtName] || null;
+    const rawLat = Number(loc.latitude ?? raw.latitude ?? knownCoords?.lat);
+    const rawLng = Number(loc.longitude ?? raw.longitude ?? knownCoords?.lng);
+
     return {
       id: raw.id || `scan-${idx + 1}`,
       crop: String(raw.crop || 'Unknown'),
@@ -104,13 +464,14 @@
       severity: String(raw.severity || 'moderate').toLowerCase(),
       advice: String(raw.advice || ''),
       advice_luganda: String(raw.advice_luganda || ''),
-      district: String(loc.district || raw.district || 'Unknown'),
+      district: districtName,
       subcounty: String(loc.subcounty || ''),
+      latitude: rawLat,
+      longitude: rawLng,
       timestamp: raw.timestamp || ''
     };
   }
 
-  // Threat filtering & map pin synchronization
   function getPeriodScans(threat) {
     const period = PERIOD_OPTIONS[state.periodIdx];
     if (period === 'Last 7 days') return threat.scans7d;
@@ -164,41 +525,9 @@
         .join('');
     }
 
-    // Highlight matching map pins
-    const activeDistricts = new Set();
-    filtered.forEach((t) => t.districts.forEach((d) => activeDistricts.add(d)));
-    const isFiltered = state.cropIdx > 0 || state.diseaseIdx > 0;
-
-    document.querySelectorAll('#map-pins .map-pin').forEach((pin) => {
-      const dist = pin.getAttribute('data-district');
-      pin.classList.toggle('dimmed', isFiltered && !activeDistricts.has(dist));
-    });
+    renderMapLayers();
   }
 
-  // Map pin popover
-  function openPinCard(districtName) {
-    const info = DISTRICT_SUMMARIES[districtName];
-    if (!info) return;
-
-    const card = document.getElementById('map-pin-card');
-    const badge = document.getElementById('pin-card-badge');
-
-    document.getElementById('pin-card-title').textContent = `${districtName} District`;
-    badge.textContent = info.label;
-    badge.className = `sev-badge ${info.severity}`;
-
-    const liveMatching = state.reports.filter(
-      (r) => r.district.toLowerCase() === districtName.toLowerCase()
-    );
-    const extra = liveMatching.length
-      ? ` Latest report: ${liveMatching[0].condition} (${Math.round(liveMatching[0].confidence * 100)}% confidence).`
-      : '';
-
-    document.getElementById('pin-card-body').textContent = info.summary + extra;
-    card.hidden = false;
-  }
-
-  // Navigation switching
   function switchView(viewName) {
     state.activeNav = viewName;
 
@@ -220,19 +549,18 @@
     if (viewName === 'map') {
       dashboardGrid.classList.add('map-expanded');
       threatPanel.hidden = true;
-    } else {
+      refreshMapViewport();
+    } else if (viewName === 'overview') {
       dashboardGrid.classList.remove('map-expanded');
       threatPanel.hidden = false;
-    }
-
-    if (viewName === 'reports') {
+      refreshMapViewport();
+    } else if (viewName === 'reports') {
       renderReportsView();
     } else if (viewName === 'settings') {
       checkApiHealth();
     }
   }
 
-  // Load seed_data.json + optional live /scans
   async function loadInitialReports() {
     let seedReports = [];
     try {
@@ -244,15 +572,15 @@
         }
       }
     } catch (_) {
-      // ignore if opened via file:// protocol
+      // ignore if opened via file://
     }
 
     state.reports = seedReports;
     populateReportFilters();
     renderNotifications();
     renderReportsView();
+    renderMapLayers();
 
-    // Quietly try syncing live backend scans as well
     try {
       const controller = new AbortController();
       const timer = window.setTimeout(() => controller.abort(), 2200);
@@ -267,10 +595,11 @@
           populateReportFilters();
           renderNotifications();
           renderReportsView();
+          renderMapLayers();
         }
       }
     } catch (_) {
-      // Backend not running; seed data remains active
+      // Seed data remains active
     }
   }
 
@@ -289,6 +618,7 @@
         populateReportFilters();
         renderNotifications();
         renderReportsView();
+        renderMapLayers();
         btn.textContent = `Synced (${state.reports.length})`;
       }
     } catch (_) {
@@ -403,7 +733,6 @@
     pill.textContent = 'Offline · Using local seed_data.json';
   }
 
-  // Export CSV report
   function downloadReportCsv() {
     const rows = [
       ['Section', 'Rank/ID', 'District/Crop', 'Condition', 'Scans/Confidence', 'Trend/Severity']
@@ -437,7 +766,7 @@
       )
       .join('\r\n');
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv], { type: 'text/csv;charset-utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -449,14 +778,12 @@
   }
 
   function bindEvents() {
-    // Sidebar navigation
     document.querySelectorAll('.sidebar nav button').forEach((btn) => {
       btn.addEventListener('click', () => {
         switchView(btn.getAttribute('data-nav') || 'overview');
       });
     });
 
-    // Threat filters
     document.getElementById('filter-crop').addEventListener('click', () => {
       state.cropIdx = (state.cropIdx + 1) % CROP_OPTIONS.length;
       renderThreatsAndPins();
@@ -470,27 +797,10 @@
       renderThreatsAndPins();
     });
 
-    // View all threats -> open Reports view
     document.getElementById('btn-view-all').addEventListener('click', () => {
       switchView('reports');
     });
 
-    // Map pins
-    document.querySelectorAll('#map-pins .map-pin').forEach((pin) => {
-      const dist = pin.getAttribute('data-district');
-      pin.addEventListener('click', () => openPinCard(dist));
-      pin.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          openPinCard(dist);
-        }
-      });
-    });
-    document.getElementById('btn-close-pin-card').addEventListener('click', () => {
-      document.getElementById('map-pin-card').hidden = true;
-    });
-
-    // Notifications popover
     const btnNotif = document.getElementById('btn-notification');
     const notifPopover = document.getElementById('notif-popover');
     const notifDot = document.getElementById('notif-dot');
@@ -509,10 +819,8 @@
       }
     });
 
-    // Download CSV report
     document.getElementById('btn-download').addEventListener('click', downloadReportCsv);
 
-    // Reports view controls
     ['rep-filter-district', 'rep-filter-crop', 'rep-filter-severity'].forEach((id) => {
       document.getElementById(id)?.addEventListener('change', renderReportsView);
     });
@@ -524,6 +832,18 @@
     bindEvents();
     renderThreatsAndPins();
     loadInitialReports();
+
+    // If Google Maps already loaded before DOMContentLoaded, initialize right away;
+    // otherwise give Google Maps 3.5s before activating Leaflet real Uganda map fallback.
+    if (window.google?.maps && !state.mapEngine) {
+      initGoogleMapInstance();
+    } else {
+      window.setTimeout(() => {
+        if (!state.mapEngine) {
+          initLeafletFallback();
+        }
+      }, 3500);
+    }
   }
 
   if (document.readyState === 'loading') {
