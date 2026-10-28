@@ -1,8 +1,8 @@
 (function () {
   'use strict';
 
-  const API_BASE = "https://eagles-eye-t8td.onrender.com";
-  const API_STORAGE_KEY = 'eagles_eye_live_api_base';
+  const API_BASE = "https://eagles-eye-api.onrender.com";
+  const API_STORAGE_KEY = 'eagles_eye_live_api_base_v2';
 
   function resolveApiBase() {
     try {

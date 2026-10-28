@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eagles-eye-v6';
+const CACHE_NAME = 'eagles-eye-v7';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

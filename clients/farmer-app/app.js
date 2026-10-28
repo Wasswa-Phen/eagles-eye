@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const API_BASE = "https://eagles-eye-t8td.onrender.com";
+  const API_BASE = "https://eagles-eye-api.onrender.com";
   const STORAGE_KEY = 'eagles_eye_real_scans_v1';
   const DISTRICT_STORAGE_KEY = 'eagles_eye_district';
 
@@ -329,7 +329,7 @@
   }
 
   // =========================================================
-  // LIVE NEARBY OUTBREAKS (GET https://eagles-eye-t8td.onrender.com/scans?limit=50)
+  // LIVE NEARBY OUTBREAKS (GET https://eagles-eye-api.onrender.com/scans?limit=50)
   // =========================================================
   async function fetchLiveNearbyOutbreaks() {
     state.nearbyStatus = 'loading';

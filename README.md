@@ -34,7 +34,7 @@ flowchart TD
     end
 
     subgraph Backend["Live Backend API Server (Python Flask + Gunicorn on Render)"]
-        API["Live Flask REST API (https://eagles-eye-t8td.onrender.com)"]
+        API["Live Flask REST API (https://eagles-eye-api.onrender.com)"]
         DIST["54-District Privacy Geotagger (backend/districts.py)"]
         STORE["Storage Adapter (backend/db.py)"]
     end
@@ -107,7 +107,7 @@ flowchart TD
     Welcome -->|"View scan history"| History["5. Scan History: Real Saved Farmer Scans"]
 
     Scan -->|"Tap Viewfinder / Shutter / Gallery"| Picker["Hardware Camera / File Picker (FileReader Data URL Preview)"]
-    Picker -->|"POST https://eagles-eye-t8td.onrender.com/diagnose"| CheckAPI{"API Response"}
+    Picker -->|"POST https://eagles-eye-api.onrender.com/diagnose"| CheckAPI{"API Response"}
 
     CheckAPI -->|"status === success"| Result["3. Crop Result: Actual User Photo + Confidence %, Severity & 3 Steps"]
     CheckAPI -->|"status === inconclusive or confidence <= 0.40"| Retake["Unclear Photo Prompt: Retake Clearer Photo"]
@@ -129,7 +129,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Entry(["Open Surveillance Dashboard"]) --> Boot["Connect to https://eagles-eye-t8td.onrender.com (GET / & GET /scans?limit=200)"]
+    Entry(["Open Surveillance Dashboard"]) --> Boot["Connect to https://eagles-eye-api.onrender.com (GET / & GET /scans?limit=200)"]
     Boot --> Mode{"Live Database Status"}
 
     Mode -->|"Online (Firestore / Memory)"| Live["Live Surveillance Mode: Real KPIs, District Heat Map & Ranked Threats"]
@@ -243,13 +243,13 @@ python app.py
 ```bash
 python -m http.server 3000 -d clients/farmer-app
 ```
-Open `http://localhost:3000`. By default, `clients/farmer-app/app.js` connects directly to the live Render deployment (`https://eagles-eye-t8td.onrender.com`).
+Open `http://localhost:3000`. By default, `clients/farmer-app/app.js` connects directly to the live Render deployment (`https://eagles-eye-api.onrender.com`).
 
 ### 3. Launch the Surveillance Dashboard (`:3001`)
 ```bash
 python -m http.server 3001 -d clients/dashboard
 ```
-Open `http://localhost:3001` to monitor live farmer scans from `https://eagles-eye-t8td.onrender.com` & Firestore, filter regional outbreaks, export CSV reports, or point to a local backend URL under **Settings** (`?api=http://localhost:8080`).
+Open `http://localhost:3001` to monitor live farmer scans from `https://eagles-eye-api.onrender.com` & Firestore, filter regional outbreaks, export CSV reports, or point to a local backend URL under **Settings** (`?api=http://localhost:8080`).
 
 ---
 

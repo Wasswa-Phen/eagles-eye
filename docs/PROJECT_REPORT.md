@@ -57,8 +57,8 @@ flowchart LR
 
 | Layer | Files | Key Responsibilities |
 |---|---|---|
-| **Farmer Mobile PWA** | `clients/farmer-app/{index.html,style.css,app.js,manifest.json,sw.js}` | 5-screen mobile flow, hardware camera/file-picker (`#camera-file-input`) with `FileReader` live preview & actual photo thumbnail on Results, live `POST https://eagles-eye-t8td.onrender.com/diagnose`, bilingual English/Luganda UI & Web Speech TTS, 54-district agro-dealer lookup, live Haversine nearby outbreak map (`GET /scans?limit=50`). |
-| **Officer Surveillance Dashboard** | `clients/dashboard/{index.html,style.css,script.js}` | Live 4-KPI calculation from `https://eagles-eye-t8td.onrender.com` & Firestore (zero mock/seed fallbacks), interactive Uganda district heat map, ranked Top Threats with crop/disease/period filters, district-filtered field reports, 20s live background polling, CSV export. |
+| **Farmer Mobile PWA** | `clients/farmer-app/{index.html,style.css,app.js,manifest.json,sw.js}` | 5-screen mobile flow, hardware camera/file-picker (`#camera-file-input`) with `FileReader` live preview & actual photo thumbnail on Results, live `POST https://eagles-eye-api.onrender.com/diagnose`, bilingual English/Luganda UI & Web Speech TTS, 54-district agro-dealer lookup, live Haversine nearby outbreak map (`GET /scans?limit=50`). |
+| **Officer Surveillance Dashboard** | `clients/dashboard/{index.html,style.css,script.js}` | Live 4-KPI calculation from `https://eagles-eye-api.onrender.com` & Firestore (zero mock/seed fallbacks), interactive Uganda district heat map, ranked Top Threats with crop/disease/period filters, district-filtered field reports, 20s live background polling, CSV export. |
 | **Backend API & AI Engine** | `backend/{app.py,db.py,districts.py,seed_firestore.py,Dockerfile}` | Multipart upload validation, structured JSON Gemini multimodal inference, inconclusive-image filtering (`confidence <= 0.40`), anonymous district geotagging, Google Cloud Firestore persistence. |
 | **Evaluation & Contracts** | `docs/DATA_CONTRACT.md`, `tests/{run_ai_tests.py,labels.csv}` | Single-source JSON contract and automated 15-image Gemini accuracy & health-status evaluation harness. |
 
@@ -95,7 +95,7 @@ stateDiagram-v2
 
 ```mermaid
 flowchart TD
-    Open(["Launch Officer Dashboard"]) --> Sync["Fetch GET / & GET /scans?limit=200 from https://eagles-eye-t8td.onrender.com"]
+    Open(["Launch Officer Dashboard"]) --> Sync["Fetch GET / & GET /scans?limit=200 from https://eagles-eye-api.onrender.com"]
     Sync --> Check{"Live Backend Status"}
 
     Check -->|"Online + Scans >= 1"| LiveMetrics["Compute Live Firestore KPIs, District Hotspots & Ranked Threats"]
@@ -130,9 +130,9 @@ flowchart TD
   - Refactored `#screen-scan` into a zero-overlap flex-column layout with `.leaf-stage`, proportional `min(250px, 60vw, 34dvh)` leaf framing, `320px`-safe 3-column grid headers, `env(safe-area-inset-*)` padding, and a dedicated two-column **landscape phone mode** (`@media (max-height: 540px) and (orientation: landscape)`).
 
 ### 4.3 Live Production Frontend ↔ Render Backend & Firestore Integration (Zero Mock Fallbacks)
-- **Direct Live Render Connection (`https://eagles-eye-t8td.onrender.com`):** Removed all static demo data (`mock_data.json`, `seed_data.json`, static placeholder crop imagery, and preset demo chips) so both the Farmer PWA and Surveillance Dashboard operate strictly on real user uploads and live Firestore records.
+- **Direct Live Render Connection (`https://eagles-eye-api.onrender.com`):** Removed all static demo data (`mock_data.json`, `seed_data.json`, static placeholder crop imagery, and preset demo chips) so both the Farmer PWA and Surveillance Dashboard operate strictly on real user uploads and live Firestore records.
 - **Hardware Camera & FileReader Pipeline:** Tapping `#viewfinder-card`, `#btn-capture`, or `#btn-gallery` triggers `#camera-file-input`, previews the user's exact photo via `FileReader` (`readAsDataURL`) inside `#scan-photo`, retains the data URL in memory to display the farmer's actual photo thumbnail in `#res-image`, and compresses oversized images (`< 4.8 MB`) via `<canvas>` before `POST /diagnose`.
-- **54-District Synchronization & Real Haversine Alerts:** Unified all 54 Ugandan district coordinates across `backend/districts.py`, `clients/farmer-app/app.js`, and `clients/dashboard/script.js`. Opening Nearby Crop Alert or tapping any notification bell queries `GET https://eagles-eye-t8td.onrender.com/scans?limit=50` and computes real Haversine distances (`km`) from the farmer's selected district.
+- **54-District Synchronization & Real Haversine Alerts:** Unified all 54 Ugandan district coordinates across `backend/districts.py`, `clients/farmer-app/app.js`, and `clients/dashboard/script.js`. Opening Nearby Crop Alert or tapping any notification bell queries `GET https://eagles-eye-api.onrender.com/scans?limit=50` and computes real Haversine distances (`km`) from the farmer's selected district.
 - **Contract-Exact Inconclusive Handling:** Blurry or non-crop photos (`status === "inconclusive"` or `confidence <= 0.40`) surface an amber `"Needs clearer photo"` badge and primary `"Retake clearer photo"` button (`#btn-retake`) without polluting outbreak history.
 - **Live Surveillance Aggregation & 20s Polling:** Connected the Dashboard KPI strip, Uganda heat map, Top Threats ranking, Notification bell, CSV export, and `?district=` report filter exclusively to live `GET /scans?limit=200` with cold-start-tolerant timeouts (`45s`).
 
