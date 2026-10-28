@@ -222,8 +222,12 @@
             <p><b>Amina Namusoke</b> · Senior Agricultural Extension Officer (Central & Eastern Uganda)</p>
           </div>
           <div class="setting-box">
-            <h3>Backend API (`http://localhost:8080`)</h3>
+            <h3 id="api-setting-title">Backend API</h3>
             <p id="api-health-desc">Connects to Flask + Gemini + Firestore `/scans` endpoint with offline `seed_data.json` fallback.</p>
+            <div class="api-url-form">
+              <input type="url" id="input-api-base" aria-label="Backend API URL" placeholder="http://localhost:8080">
+              <button type="button" class="btn-sync-live" id="btn-save-api">Connect</button>
+            </div>
             <span class="api-status" id="api-health-pill">Checking status...</span>
           </div>
           <div class="setting-box">

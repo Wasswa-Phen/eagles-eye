@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eagles-eye-v4';
+const CACHE_NAME = 'eagles-eye-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -29,7 +29,23 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET' || event.request.url.includes('/diagnose')) {
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  let reqUrl;
+  try {
+    reqUrl = new URL(event.request.url);
+  } catch (_) {
+    return;
+  }
+
+  // Never intercept cross-origin backend API calls (:8080/scans, :8080/, Cloud Run) or map tiles
+  if (
+    reqUrl.origin !== self.location.origin ||
+    reqUrl.pathname.endsWith('/diagnose') ||
+    reqUrl.pathname.endsWith('/scans')
+  ) {
     return;
   }
 
@@ -48,7 +64,7 @@ self.addEventListener('fetch', (event) => {
           if (event.request.headers.get('accept')?.includes('text/html')) {
             return caches.match('./index.html');
           }
-          return undefined;
+          return new Response('', { status: 503, statusText: 'Offline' });
         })
       )
   );

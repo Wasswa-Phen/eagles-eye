@@ -99,9 +99,26 @@
         <p id="txt-scan-instruction">Take a clear photo of<br><b>the sick leaf</b></p>
       </div>
 
+      <div class="scan-context">
+        <select id="scan-district" aria-label="Select your Ugandan district">
+          <option value="Masaka" selected>Masaka</option>
+        </select>
+        <select id="scan-crop-hint" aria-label="Optional crop hint">
+          <option value="" id="opt-crop-auto">Auto-detect crop</option>
+          <option value="Cassava">Cassava</option>
+          <option value="Maize">Maize</option>
+          <option value="Banana / Matooke">Banana / Matooke</option>
+          <option value="Coffee">Coffee</option>
+          <option value="Beans">Beans</option>
+          <option value="Tomato">Tomato</option>
+        </select>
+      </div>
+
       <div class="leaf-stage">
         <div class="leaf-frame"><span id="txt-leaf-frame">Place leaf here</span></div>
       </div>
+
+      <div class="scan-toast" id="scan-toast" role="alert" hidden></div>
 
       <div class="loading-card" id="loading-card" hidden>
         <span class="spinner"></span>

@@ -1,7 +1,39 @@
 (function () {
   'use strict';
 
-  const API_BASE = 'http://localhost:8080';
+  function resolveApiBase() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fromQuery = params.get('api');
+      if (fromQuery) {
+        const cleaned = fromQuery.replace(/\/+$/, '');
+        localStorage.setItem('eagles_eye_api_base', cleaned);
+        return cleaned;
+      }
+      if (window.EAGLES_EYE_API_BASE) {
+        return String(window.EAGLES_EYE_API_BASE).replace(/\/+$/, '');
+      }
+      const saved = localStorage.getItem('eagles_eye_api_base');
+      if (saved) {
+        return saved.replace(/\/+$/, '');
+      }
+    } catch (_) {
+      // ignore storage errors
+    }
+
+    const host = window.location.hostname;
+    if (
+      host &&
+      (host === 'localhost' ||
+        host === '127.0.0.1' ||
+        /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host))
+    ) {
+      const proto = window.location.protocol === 'https:' ? 'https:' : 'http:';
+      return `${proto}//${host}:8080`;
+    }
+    return 'http://localhost:8080';
+  }
+
   const UGANDA_CENTER = { lat: 1.3733, lng: 32.2903 };
   const UGANDA_BOUNDS = {
     north: 4.5,
@@ -10,26 +42,66 @@
     east: 35.3
   };
 
-  // Real WGS84 coordinates for Ugandan districts (from backend/districts.py)
+  // Complete 54 Ugandan districts matching backend/districts.py
   const UGANDA_DISTRICTS = {
-    Masaka: { lat: -0.3411, lng: 31.7361 },
-    Mukono: { lat: 0.3549, lng: 32.7523 },
-    Mbale: { lat: 1.0784, lng: 34.1754 },
-    Mbarara: { lat: -0.6072, lng: 30.6545 },
+    Adjumani: { lat: 3.3760, lng: 31.7900 },
+    Apac: { lat: 1.9760, lng: 32.5390 },
+    Arua: { lat: 3.0200, lng: 30.9110 },
+    Bududa: { lat: 1.0000, lng: 34.3333 },
+    Bugiri: { lat: 0.5710, lng: 33.7490 },
+    Buikwe: { lat: 0.3167, lng: 33.0167 },
+    Bukomansimbi: { lat: -0.1500, lng: 31.6000 },
+    Bundibugyo: { lat: 0.7130, lng: 30.0640 },
+    Bushenyi: { lat: -0.5410, lng: 30.1840 },
+    Busia: { lat: 0.4710, lng: 34.0910 },
     Gulu: { lat: 2.7746, lng: 32.2990 },
-    Wakiso: { lat: 0.4044, lng: 32.4594 },
-    Kampala: { lat: 0.3476, lng: 32.5825 },
+    Hoima: { lat: 1.4350, lng: 31.3524 },
+    Ibanda: { lat: -0.1300, lng: 30.5000 },
     Iganga: { lat: 0.6090, lng: 33.4680 },
     Jinja: { lat: 0.4244, lng: 33.2042 },
-    Lira: { lat: 2.2499, lng: 32.8998 },
-    Soroti: { lat: 1.7150, lng: 33.6110 },
+    Kabale: { lat: -1.2490, lng: 29.9900 },
+    Kabarole: { lat: 0.6710, lng: 30.2750 },
+    Kampala: { lat: 0.3476, lng: 32.5825 },
+    Kamuli: { lat: 0.9470, lng: 33.1200 },
+    Kapchorwa: { lat: 1.4000, lng: 34.4500 },
     Kasese: { lat: 0.1830, lng: 30.0880 },
-    Hoima: { lat: 1.4350, lng: 31.3524 },
-    Arua: { lat: 3.0200, lng: 30.9110 },
-    Kabale: { lat: -1.2490, lng: 29.9900 }
+    Kayunga: { lat: 0.7020, lng: 32.8890 },
+    Kiboga: { lat: 0.9167, lng: 31.7667 },
+    Kisoro: { lat: -1.2850, lng: 29.6850 },
+    Kitgum: { lat: 3.2780, lng: 32.8870 },
+    Kumi: { lat: 1.4600, lng: 33.9360 },
+    Kyenjojo: { lat: 0.6290, lng: 30.6410 },
+    Kyotera: { lat: -0.6333, lng: 31.5167 },
+    Lira: { lat: 2.2499, lng: 32.8998 },
+    Luwero: { lat: 0.8490, lng: 32.4730 },
+    Lwengo: { lat: -0.4167, lng: 31.4000 },
+    Lyantonde: { lat: -0.4017, lng: 31.1583 },
+    Masaka: { lat: -0.3411, lng: 31.7361 },
+    Masindi: { lat: 1.6744, lng: 31.7150 },
+    Mayuge: { lat: 0.4590, lng: 33.4800 },
+    Mbale: { lat: 1.0784, lng: 34.1754 },
+    Mbarara: { lat: -0.6072, lng: 30.6545 },
+    Mityana: { lat: 0.4167, lng: 32.0333 },
+    Moroto: { lat: 2.5340, lng: 34.6660 },
+    Mpigi: { lat: 0.2260, lng: 32.3140 },
+    Mubende: { lat: 0.5833, lng: 31.3667 },
+    Mukono: { lat: 0.3549, lng: 32.7523 },
+    Nakaseke: { lat: 0.7333, lng: 32.4167 },
+    Nakasongola: { lat: 1.3167, lng: 32.4667 },
+    Nebbi: { lat: 2.4780, lng: 31.0890 },
+    Ntungamo: { lat: -0.8794, lng: 30.2639 },
+    Pallisa: { lat: 1.1450, lng: 33.7090 },
+    Rakai: { lat: -0.7167, lng: 31.4167 },
+    Rukungiri: { lat: -0.8417, lng: 29.9417 },
+    Sironko: { lat: 1.2300, lng: 34.2500 },
+    Soroti: { lat: 1.7150, lng: 33.6110 },
+    Ssembabule: { lat: -0.0750, lng: 31.4600 },
+    Tororo: { lat: 0.6928, lng: 34.1810 },
+    Wakiso: { lat: 0.4044, lng: 32.4594 }
   };
 
-  const OUTBREAK_HOTSPOTS = [
+  // Offline / pre-scan surveillance baseline (used when backend is offline or has 0 scans yet)
+  const BASELINE_HOTSPOTS = [
     {
       district: 'Masaka',
       lat: -0.3411,
@@ -120,7 +192,7 @@
     }
   ];
 
-  const THREATS = [
+  const BASELINE_THREATS = [
     {
       rank: 1,
       disease: 'Cassava mosaic',
@@ -163,16 +235,23 @@
     }
   ];
 
-  const CROP_OPTIONS = ['All crops', 'Cassava', 'Maize', 'Banana', 'Coffee'];
-  const DISEASE_OPTIONS = ['All diseases', 'Cassava mosaic', 'Fall armyworm', 'Banana wilt', 'Coffee leaf rust'];
+  const DEFAULT_CROPS = ['All crops', 'Cassava', 'Maize', 'Banana', 'Coffee'];
+  const DEFAULT_DISEASES = ['All diseases', 'Cassava mosaic', 'Fall armyworm', 'Banana wilt', 'Coffee leaf rust'];
   const PERIOD_OPTIONS = ['Last 30 days', 'Last 7 days', 'Today'];
 
   const state = {
+    apiBase: resolveApiBase(),
+    backendOnline: false,
+    storageMode: null,
     activeNav: 'overview',
     cropIdx: 0,
     diseaseIdx: 0,
     periodIdx: 0,
-    reports: [],
+    seedReports: [],
+    liveReports: [],
+    districtFilteredReports: null,
+    latestTopId: null,
+    pollTimer: null,
     mapEngine: null, // 'google' | 'leaflet'
     googleMap: null,
     googleMarkers: [],
@@ -199,20 +278,184 @@
     return '#2e7d32';
   }
 
+  function severityRank(sev) {
+    const s = String(sev || '').toLowerCase();
+    if (s === 'high') return 3;
+    if (s === 'moderate') return 2;
+    if (s === 'low') return 1;
+    return 0;
+  }
+
+  function hasLiveScans() {
+    return state.backendOnline && state.liveReports.length > 0;
+  }
+
+  function activeReports() {
+    if (hasLiveScans()) return state.liveReports;
+    if (state.backendOnline && state.liveReports.length === 0) return [];
+    return state.seedReports;
+  }
+
+  function updateHeaderClock() {
+    const now = new Date();
+    const dateEl = document.getElementById('header-date');
+    const titleEl = document.getElementById('header-title');
+    if (dateEl) {
+      dateEl.textContent = now
+        .toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+        .toUpperCase();
+    }
+    if (titleEl) {
+      const hr = now.getHours();
+      const greeting = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+      titleEl.textContent = `${greeting}, Amina`;
+    }
+  }
+
   function hideMapLoading() {
     const loader = document.getElementById('map-loading');
     if (loader) loader.hidden = true;
   }
 
+  // =========================================================
+  // PERIOD, CROP & DISEASE FILTERING + LIVE AGGREGATION
+  // =========================================================
+  function isWithinPeriod(isoTimestamp, periodLabel) {
+    if (!isoTimestamp || periodLabel === 'Last 30 days') {
+      if (!isoTimestamp) return true;
+      const ms = Date.now() - new Date(isoTimestamp).getTime();
+      return Number.isNaN(ms) ? true : ms <= 30 * 24 * 3600 * 1000;
+    }
+    const ts = new Date(isoTimestamp).getTime();
+    if (Number.isNaN(ts)) return true;
+    const ageMs = Date.now() - ts;
+    if (periodLabel === 'Today') {
+      return ageMs <= 24 * 3600 * 1000;
+    }
+    if (periodLabel === 'Last 7 days') {
+      return ageMs <= 7 * 24 * 3600 * 1000;
+    }
+    return true;
+  }
+
+  function getCropOptions() {
+    if (!hasLiveScans()) return DEFAULT_CROPS;
+    const unique = [...new Set(state.liveReports.map((r) => r.crop).filter((c) => c && c !== 'Unknown'))];
+    return ['All crops', ...unique];
+  }
+
+  function getDiseaseOptions() {
+    if (!hasLiveScans()) return DEFAULT_DISEASES;
+    const unique = [
+      ...new Set(
+        state.liveReports
+          .filter((r) => !r.isHealthy && r.severity !== 'none' && r.severity !== 'healthy')
+          .map((r) => r.condition)
+          .filter(Boolean)
+      )
+    ];
+    return ['All diseases', ...unique];
+  }
+
+  function computeLiveThreats() {
+    const diseased = state.liveReports.filter(
+      (r) => !r.isHealthy && r.severity !== 'none' && r.severity !== 'healthy'
+    );
+    const groups = new Map();
+
+    diseased.forEach((r) => {
+      const key = `${r.condition.toLowerCase()}|${r.crop.toLowerCase()}`;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          disease: r.condition,
+          crop: r.crop,
+          scans30d: 0,
+          scans7d: 0,
+          scansToday: 0,
+          highCount: 0,
+          total: 0
+        });
+      }
+      const g = groups.get(key);
+      g.total += 1;
+      if (r.severity === 'high') g.highCount += 1;
+      if (isWithinPeriod(r.timestamp, 'Last 30 days')) g.scans30d += 1;
+      if (isWithinPeriod(r.timestamp, 'Last 7 days')) g.scans7d += 1;
+      if (isWithinPeriod(r.timestamp, 'Today')) g.scansToday += 1;
+    });
+
+    return [...groups.values()]
+      .sort((a, b) => b.total - a.total)
+      .map((g, index) => {
+        const highPct = Math.round((g.highCount / Math.max(1, g.total)) * 100);
+        return {
+          rank: index + 1,
+          disease: g.disease,
+          crop: g.crop,
+          scans30d: g.scans30d || g.total,
+          scans7d: g.scans7d,
+          scansToday: g.scansToday,
+          trend: highPct > 0 ? `${highPct}% high` : 'Active',
+          trendClass: highPct >= 40 ? 'up' : ''
+        };
+      });
+  }
+
   function getFilteredHotspots() {
-    const selectedCrop = CROP_OPTIONS[state.cropIdx];
-    const selectedDisease = DISEASE_OPTIONS[state.diseaseIdx];
+    const crops = getCropOptions();
+    const diseases = getDiseaseOptions();
+    const selectedCrop = crops[state.cropIdx] || 'All crops';
+    const selectedDisease = diseases[state.diseaseIdx] || 'All diseases';
+    const selectedPeriod = PERIOD_OPTIONS[state.periodIdx] || 'Last 30 days';
 
-    // Merge canonical Uganda hotspots with any live backend reports from new districts
+    // When connected to backend with real/seeded scans, build district map directly from GET /scans
+    if (hasLiveScans()) {
+      const periodScans = state.liveReports.filter((r) => isWithinPeriod(r.timestamp, selectedPeriod));
+      const byDistrict = new Map();
+
+      periodScans.forEach((r) => {
+        if (!Number.isFinite(r.latitude) || !Number.isFinite(r.longitude)) return;
+        const cropOk = selectedCrop === 'All crops' || r.crop.toLowerCase().includes(selectedCrop.toLowerCase());
+        const disOk = selectedDisease === 'All diseases' || r.condition.toLowerCase().includes(selectedDisease.toLowerCase());
+        if (!cropOk || !disOk) return;
+
+        const key = r.district.toLowerCase();
+        if (!byDistrict.has(key)) {
+          byDistrict.set(key, {
+            district: r.district,
+            lat: r.latitude,
+            lng: r.longitude,
+            crop: r.crop,
+            disease: r.condition,
+            severity: r.severity,
+            scans: 0,
+            weight: 1,
+            summary: r.advice
+          });
+        }
+
+        const entry = byDistrict.get(key);
+        entry.scans += 1;
+        if (severityRank(r.severity) > severityRank(entry.severity)) {
+          entry.severity = r.severity;
+          entry.crop = r.crop;
+          entry.disease = r.condition;
+          if (r.advice) entry.summary = r.advice;
+        }
+        entry.weight = Math.min(
+          6,
+          1.3 + entry.scans * 0.45 + (entry.severity === 'high' ? 1.6 : entry.severity === 'moderate' ? 0.8 : 0.2)
+        );
+      });
+
+      return [...byDistrict.values()];
+    }
+
+    // Offline / pre-scan fallback: merge baseline hotspots with seed_data.json
     const byDistrict = new Map();
-    OUTBREAK_HOTSPOTS.forEach((h) => byDistrict.set(h.district.toLowerCase(), { ...h }));
+    BASELINE_HOTSPOTS.forEach((h) => byDistrict.set(h.district.toLowerCase(), { ...h }));
 
-    state.reports.forEach((r) => {
+    state.seedReports.forEach((r) => {
       const key = r.district.toLowerCase();
       if (!byDistrict.has(key) && Number.isFinite(r.latitude) && Number.isFinite(r.longitude)) {
         byDistrict.set(key, {
@@ -240,8 +483,96 @@
     return `<div class="ug-info-popup">
       <strong>${escapeHtml(spot.district)} District</strong>
       <div class="ug-pop-crop">${escapeHtml(spot.crop)} · ${escapeHtml(spot.disease)} (${escapeHtml(spot.severity)})</div>
-      <p>${escapeHtml(spot.scans)} confirmed scans. ${escapeHtml(spot.summary)}</p>
+      <p>${escapeHtml(spot.scans)} confirmed scan${spot.scans === 1 ? '' : 's'}. ${escapeHtml(spot.summary)}</p>
     </div>`;
+  }
+
+  // =========================================================
+  // KPI CARDS & LIVE INDICATOR
+  // =========================================================
+  function renderLiveStatusBadge() {
+    const liveEl = document.getElementById('live-indicator');
+    if (!liveEl) return;
+
+    if (hasLiveScans()) {
+      liveEl.classList.remove('is-seed');
+      liveEl.innerHTML = `<i></i> Live API · ${state.liveReports.length} scan${state.liveReports.length === 1 ? '' : 's'}`;
+    } else if (state.backendOnline) {
+      liveEl.classList.remove('is-seed');
+      liveEl.innerHTML = `<i></i> Live API · Ready`;
+    } else {
+      liveEl.classList.add('is-seed');
+      liveEl.innerHTML = `<i></i> Seed data (offline)`;
+    }
+  }
+
+  function renderKpiStats() {
+    const elScans = document.getElementById('stat-scans');
+    const elScansSub = document.getElementById('stat-scans-sub');
+    const elOutbreaks = document.getElementById('stat-outbreaks');
+    const elOutbreaksSub = document.getElementById('stat-outbreaks-sub');
+    const elDistricts = document.getElementById('stat-districts');
+    const elDistrictsSub = document.getElementById('stat-districts-sub');
+    const elDisease = document.getElementById('stat-disease');
+    const elDiseaseSub = document.getElementById('stat-disease-sub');
+
+    if (!hasLiveScans()) {
+      elScans.textContent = '2,847';
+      elScansSub.textContent = state.backendOnline ? 'Awaiting first live scan' : '+12.4%';
+      elOutbreaks.textContent = '12';
+      elOutbreaksSub.textContent = '+3 this week';
+      elDistricts.textContent = '18';
+      elDistrictsSub.textContent = 'of 146 districts';
+      elDisease.textContent = 'Cassava mosaic';
+      elDiseaseSub.textContent = '38% of diagnoses';
+      return;
+    }
+
+    const total = state.liveReports.length;
+    const weekCount = state.liveReports.filter((r) => isWithinPeriod(r.timestamp, 'Last 7 days')).length || total;
+    const diseased = state.liveReports.filter(
+      (r) => !r.isHealthy && r.severity !== 'none' && r.severity !== 'healthy'
+    );
+    const highCount = diseased.filter((r) => r.severity === 'high').length;
+
+    const clusterSet = new Set(
+      diseased.map((r) => `${r.district.toLowerCase()}|${r.condition.toLowerCase()}`)
+    );
+    const districtSet = new Set(
+      diseased
+        .map((r) => r.district)
+        .filter((d) => d && d.toLowerCase() !== 'unknown')
+    );
+
+    const condCounts = new Map();
+    diseased.forEach((r) => {
+      condCounts.set(r.condition, (condCounts.get(r.condition) || 0) + 1);
+    });
+
+    let topDisease = 'Healthy foliage';
+    let topDiseaseCount = total - diseased.length;
+    condCounts.forEach((cnt, name) => {
+      if (cnt > topDiseaseCount || topDisease === 'Healthy foliage') {
+        if (cnt > (condCounts.get(topDisease) || 0)) {
+          topDisease = name;
+          topDiseaseCount = cnt;
+        }
+      }
+    });
+    const topPct = Math.round((topDiseaseCount / Math.max(1, total)) * 100);
+
+    elScans.textContent = weekCount.toLocaleString();
+    elScansSub.textContent = `${total} total (${state.storageMode || 'API'})`;
+
+    elOutbreaks.textContent = String(clusterSet.size);
+    elOutbreaksSub.textContent = `${highCount} high severity`;
+
+    elDistricts.textContent = String(districtSet.size);
+    elDistrictsSub.textContent = 'of 146 districts';
+
+    elDisease.textContent = topDisease;
+    elDisease.title = topDisease;
+    elDiseaseSub.textContent = `${topPct}% of diagnoses`;
   }
 
   // =========================================================
@@ -435,7 +766,6 @@
     }, 80);
   }
 
-  // Expose Google Maps callbacks & auth-failure fallback
   window.initGoogleMap = function () {
     initGoogleMapInstance();
   };
@@ -447,21 +777,24 @@
   };
 
   // =========================================================
-  // THREATS, REPORTS & ACTIONS
+  // THREATS, REPORTS & BACKEND API SYNC (GET / & GET /scans)
   // =========================================================
   function normalizeReport(raw, idx) {
     const loc = raw.location || {};
-    const districtName = String(loc.district || raw.district || 'Masaka');
+    const districtName = String(loc.district || raw.district || 'Unknown');
     const knownCoords = UGANDA_DISTRICTS[districtName] || null;
     const rawLat = Number(loc.latitude ?? raw.latitude ?? knownCoords?.lat);
     const rawLng = Number(loc.longitude ?? raw.longitude ?? knownCoords?.lng);
+    const isHealthy = Boolean(raw.is_healthy);
+    const rawSev = String(raw.severity || (isHealthy ? 'healthy' : 'moderate')).toLowerCase();
 
     return {
       id: raw.id || `scan-${idx + 1}`,
       crop: String(raw.crop || 'Unknown'),
       condition: String(raw.condition || 'Unspecified condition'),
       confidence: Number(raw.confidence ?? 0.9),
-      severity: String(raw.severity || 'moderate').toLowerCase(),
+      severity: isHealthy || rawSev === 'none' ? 'healthy' : rawSev,
+      isHealthy,
       advice: String(raw.advice || ''),
       advice_luganda: String(raw.advice_luganda || ''),
       district: districtName,
@@ -480,8 +813,13 @@
   }
 
   function renderThreatsAndPins() {
-    const selectedCrop = CROP_OPTIONS[state.cropIdx];
-    const selectedDisease = DISEASE_OPTIONS[state.diseaseIdx];
+    const crops = getCropOptions();
+    const diseases = getDiseaseOptions();
+    if (state.cropIdx >= crops.length) state.cropIdx = 0;
+    if (state.diseaseIdx >= diseases.length) state.diseaseIdx = 0;
+
+    const selectedCrop = crops[state.cropIdx];
+    const selectedDisease = diseases[state.diseaseIdx];
     const selectedPeriod = PERIOD_OPTIONS[state.periodIdx];
 
     const btnCrop = document.getElementById('filter-crop');
@@ -499,9 +837,10 @@
     document.getElementById('map-period-subtitle').textContent =
       `Confirmed cases by district · ${selectedPeriod}`;
 
-    const filtered = THREATS.filter((t) => {
-      const cropMatch = selectedCrop === 'All crops' || t.crop === selectedCrop;
-      const disMatch = selectedDisease === 'All diseases' || t.disease === selectedDisease;
+    const sourceThreats = hasLiveScans() ? computeLiveThreats() : BASELINE_THREATS;
+    const filtered = sourceThreats.filter((t) => {
+      const cropMatch = selectedCrop === 'All crops' || t.crop.toLowerCase().includes(selectedCrop.toLowerCase());
+      const disMatch = selectedDisease === 'All diseases' || t.disease.toLowerCase().includes(selectedDisease.toLowerCase());
       return cropMatch && disMatch;
     });
 
@@ -510,6 +849,7 @@
       listEl.innerHTML = `<li><b>–</b><div><strong>No matching threats</strong><span>Click filter buttons to reset</span></div><em>0</em></li>`;
     } else {
       listEl.innerHTML = filtered
+        .slice(0, 8)
         .map((item, idx) => {
           const count = getPeriodScans(item);
           const emClass = item.trendClass ? ` class="${item.trendClass}"` : '';
@@ -517,7 +857,7 @@
             <b>${idx + 1}</b>
             <div>
               <strong>${escapeHtml(item.disease)}</strong>
-              <span>${escapeHtml(item.crop)} · ${count} scans</span>
+              <span>${escapeHtml(item.crop)} · ${count} scan${count === 1 ? '' : 's'}</span>
             </div>
             <em${emClass}>${escapeHtml(item.trend)}</em>
           </li>`;
@@ -526,6 +866,15 @@
     }
 
     renderMapLayers();
+  }
+
+  function refreshAllDashboardViews() {
+    renderLiveStatusBadge();
+    renderKpiStats();
+    populateReportFilters();
+    renderNotifications();
+    renderReportsView();
+    renderThreatsAndPins();
   }
 
   function switchView(viewName) {
@@ -562,45 +911,99 @@
   }
 
   async function loadInitialReports() {
-    let seedReports = [];
     try {
       const res = await fetch('./seed_data.json', { cache: 'no-store' });
       if (res.ok) {
         const arr = await res.json();
         if (Array.isArray(arr)) {
-          seedReports = arr.map(normalizeReport);
+          state.seedReports = arr.map(normalizeReport);
         }
       }
     } catch (_) {
       // ignore if opened via file://
     }
 
-    state.reports = seedReports;
-    populateReportFilters();
-    renderNotifications();
-    renderReportsView();
-    renderMapLayers();
+    refreshAllDashboardViews();
+    await fetchLiveScansFromBackend();
+  }
+
+  async function fetchLiveScansFromBackend() {
+    try {
+      const healthCtrl = new AbortController();
+      const healthTimer = window.setTimeout(() => healthCtrl.abort(), 3000);
+      const healthRes = await fetch(`${state.apiBase}/`, { signal: healthCtrl.signal });
+      window.clearTimeout(healthTimer);
+      if (healthRes.ok) {
+        const info = await healthRes.json();
+        state.backendOnline = true;
+        state.storageMode = info.storage || 'active';
+      }
+    } catch (_) {
+      state.backendOnline = false;
+    }
 
     try {
       const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 2200);
-      const liveRes = await fetch(`${API_BASE}/scans`, { signal: controller.signal });
+      const timer = window.setTimeout(() => controller.abort(), 5000);
+      const liveRes = await fetch(`${state.apiBase}/scans?limit=200`, { signal: controller.signal });
       window.clearTimeout(timer);
 
       if (liveRes.ok) {
         const payload = await liveRes.json();
         const scans = Array.isArray(payload) ? payload : payload.scans;
-        if (Array.isArray(scans) && scans.length > 0) {
-          state.reports = scans.map(normalizeReport);
-          populateReportFilters();
-          renderNotifications();
-          renderReportsView();
-          renderMapLayers();
+        if (Array.isArray(scans)) {
+          state.backendOnline = true;
+          const mapped = scans.map(normalizeReport);
+          const newestId = mapped[0]?.id || null;
+
+          if (state.latestTopId && newestId && newestId !== state.latestTopId) {
+            const notifDot = document.getElementById('notif-dot');
+            if (notifDot) notifDot.hidden = false;
+          }
+          if (newestId) {
+            state.latestTopId = newestId;
+          }
+
+          state.liveReports = mapped;
+          state.districtFilteredReports = null;
+          refreshAllDashboardViews();
+          return true;
         }
       }
     } catch (_) {
-      // Seed data remains active
+      state.backendOnline = false;
     }
+
+    refreshAllDashboardViews();
+    return false;
+  }
+
+  async function fetchDistrictScansIfOnline(district) {
+    if (!state.backendOnline || !district || district === 'all') {
+      state.districtFilteredReports = null;
+      renderReportsView();
+      return;
+    }
+
+    try {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 4500);
+      const res = await fetch(
+        `${state.apiBase}/scans?district=${encodeURIComponent(district)}&limit=200`,
+        { signal: controller.signal }
+      );
+      window.clearTimeout(timer);
+      if (res.ok) {
+        const payload = await res.json();
+        const scans = Array.isArray(payload) ? payload : payload.scans;
+        if (Array.isArray(scans)) {
+          state.districtFilteredReports = scans.map(normalizeReport);
+        }
+      }
+    } catch (_) {
+      state.districtFilteredReports = null;
+    }
+    renderReportsView();
   }
 
   async function syncBackendExplicit() {
@@ -608,27 +1011,17 @@
     btn.disabled = true;
     btn.textContent = 'Syncing...';
 
-    try {
-      const res = await fetch(`${API_BASE}/scans`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const payload = await res.json();
-      const scans = Array.isArray(payload) ? payload : payload.scans;
-      if (Array.isArray(scans)) {
-        state.reports = scans.map(normalizeReport);
-        populateReportFilters();
-        renderNotifications();
-        renderReportsView();
-        renderMapLayers();
-        btn.textContent = `Synced (${state.reports.length})`;
-      }
-    } catch (_) {
+    const ok = await fetchLiveScansFromBackend();
+    if (ok) {
+      btn.textContent = `Synced (${state.liveReports.length})`;
+    } else {
       btn.textContent = 'Offline (seed data)';
-    } finally {
-      window.setTimeout(() => {
-        btn.disabled = false;
-        btn.textContent = 'Sync live API';
-      }, 2000);
     }
+
+    window.setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = 'Sync live API';
+    }, 2200);
   }
 
   function populateSelect(selectId, items, defaultLabel) {
@@ -642,9 +1035,17 @@
   }
 
   function populateReportFilters() {
-    populateSelect('rep-filter-district', state.reports.map((r) => r.district), 'All districts');
-    populateSelect('rep-filter-crop', state.reports.map((r) => r.crop), 'All crops');
-    populateSelect('rep-filter-severity', state.reports.map((r) => r.severity), 'All severities');
+    const pool = activeReports();
+    populateSelect('rep-filter-district', pool.map((r) => r.district), 'All districts');
+    populateSelect('rep-filter-crop', pool.map((r) => r.crop), 'All crops');
+    populateSelect('rep-filter-severity', pool.map((r) => r.severity), 'All severities');
+  }
+
+  function formatScanTimestamp(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return ' · ' + d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
 
   function renderReportsView() {
@@ -655,7 +1056,12 @@
     const fCrop = document.getElementById('rep-filter-crop')?.value || 'all';
     const fSev = document.getElementById('rep-filter-severity')?.value || 'all';
 
-    const matches = state.reports.filter((r) => {
+    const basePool =
+      fDist !== 'all' && Array.isArray(state.districtFilteredReports)
+        ? state.districtFilteredReports
+        : activeReports();
+
+    const matches = basePool.filter((r) => {
       return (
         (fDist === 'all' || r.district === fDist) &&
         (fCrop === 'all' || r.crop === fCrop) &&
@@ -663,8 +1069,17 @@
       );
     });
 
+    const totalCount = activeReports().length;
+    if (state.backendOnline && totalCount === 0) {
+      document.getElementById('reports-count-text').textContent =
+        `Connected to live API (${state.storageMode || 'memory'}) · 0 scans recorded yet`;
+      listEl.innerHTML = `<div class="report-row"><p class="report-meta">Live backend is online with 0 scans so far. Scan a crop leaf in the Farmer App to see it appear here in real time.</p></div>`;
+      return;
+    }
+
+    const modeSuffix = state.backendOnline ? `live ${state.storageMode || 'API'}` : 'offline seed';
     document.getElementById('reports-count-text').textContent =
-      `Showing ${matches.length} of ${state.reports.length} confirmed district reports`;
+      `Showing ${matches.length} of ${totalCount} district reports (${modeSuffix})`;
 
     if (matches.length === 0) {
       listEl.innerHTML = `<div class="report-row"><p class="report-meta">No matching reports for the selected filters.</p></div>`;
@@ -675,12 +1090,13 @@
       .map((r) => {
         const conf = Math.round((r.confidence || 0.9) * 100);
         const area = r.subcounty ? `${r.district} · ${r.subcounty}` : `${r.district} District`;
+        const timePart = formatScanTimestamp(r.timestamp);
         return `<article class="report-row">
           <div class="report-row-top">
             <strong>${escapeHtml(r.crop)} — ${escapeHtml(r.condition)}</strong>
             <span class="sev-badge ${escapeHtml(r.severity)}">${escapeHtml(r.severity)}</span>
           </div>
-          <div class="report-meta">${escapeHtml(area)} · AI confidence ${conf}%</div>
+          <div class="report-meta">${escapeHtml(area)} · AI confidence ${conf}%${escapeHtml(timePart)}</div>
           <p class="report-advice">${escapeHtml(r.advice)}</p>
           ${r.advice_luganda ? `<p class="report-luganda">Luganda: ${escapeHtml(r.advice_luganda)}</p>` : ''}
         </article>`;
@@ -692,8 +1108,9 @@
     const notifList = document.getElementById('notif-list');
     if (!notifList) return;
 
-    const source = state.reports.length
-      ? state.reports.slice(0, 3)
+    const pool = activeReports();
+    const source = pool.length
+      ? pool.slice(0, 4)
       : [
           { district: 'Masaka', crop: 'Banana / Matooke', condition: 'Banana Bacterial Wilt (BXW)', severity: 'high' },
           { district: 'Mukono', crop: 'Cassava', condition: 'Cassava Mosaic Disease (CMD)', severity: 'moderate' },
@@ -704,7 +1121,7 @@
       .map(
         (item) => `<div class="notif-item">
           <b>${escapeHtml(item.district)} · ${escapeHtml(item.condition)}</b>
-          <small>${escapeHtml(item.crop)} (${escapeHtml(item.severity)} severity)</small>
+          <small>${escapeHtml(item.crop)} (${escapeHtml(item.severity)} severity)${escapeHtml(formatScanTimestamp(item.timestamp))}</small>
         </div>`
       )
       .join('');
@@ -712,51 +1129,63 @@
 
   async function checkApiHealth() {
     const pill = document.getElementById('api-health-pill');
+    const titleEl = document.getElementById('api-setting-title');
+    const inputEl = document.getElementById('input-api-base');
+    if (titleEl) titleEl.textContent = `Backend API (${state.apiBase})`;
+    if (inputEl && !inputEl.value) inputEl.value = state.apiBase;
     if (!pill) return;
+
     pill.textContent = 'Checking status...';
     pill.classList.remove('online');
 
     try {
       const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 2500);
-      const res = await fetch(`${API_BASE}/`, { signal: controller.signal });
+      const timer = window.setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(`${state.apiBase}/`, { signal: controller.signal });
       window.clearTimeout(timer);
       if (res.ok) {
         const info = await res.json();
-        pill.textContent = `Online · Storage: ${info.storage || 'active'}`;
+        state.backendOnline = true;
+        state.storageMode = info.storage || 'active';
+        pill.textContent = `Online · Storage: ${state.storageMode} · v${info.version || '1.0.0'}`;
         pill.classList.add('online');
+        renderLiveStatusBadge();
         return;
       }
     } catch (_) {
-      // ignore
+      state.backendOnline = false;
     }
     pill.textContent = 'Offline · Using local seed_data.json';
+    renderLiveStatusBadge();
   }
 
   function downloadReportCsv() {
     const rows = [
-      ['Section', 'Rank/ID', 'District/Crop', 'Condition', 'Scans/Confidence', 'Trend/Severity']
+      ['Section', 'Rank/ID', 'District/Crop', 'Condition', 'Scans/Confidence', 'Trend/Severity', 'Timestamp']
     ];
 
-    THREATS.forEach((t) => {
+    const threats = hasLiveScans() ? computeLiveThreats() : BASELINE_THREATS;
+    threats.forEach((t) => {
       rows.push([
         'Top Threat',
         String(t.rank),
         t.crop,
         t.disease,
         `${getPeriodScans(t)} scans`,
-        t.trend
+        t.trend,
+        ''
       ]);
     });
 
-    state.reports.forEach((r) => {
+    activeReports().forEach((r) => {
       rows.push([
         'Field Report',
         r.id,
         `${r.district} (${r.crop})`,
         r.condition,
         `${Math.round((r.confidence || 0) * 100)}%`,
-        r.severity
+        r.severity,
+        r.timestamp || ''
       ]);
     });
 
@@ -766,7 +1195,7 @@
       )
       .join('\r\n');
 
-    const blob = new Blob([csv], { type: 'text/csv;charset-utf-8;' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -785,11 +1214,13 @@
     });
 
     document.getElementById('filter-crop').addEventListener('click', () => {
-      state.cropIdx = (state.cropIdx + 1) % CROP_OPTIONS.length;
+      const crops = getCropOptions();
+      state.cropIdx = (state.cropIdx + 1) % crops.length;
       renderThreatsAndPins();
     });
     document.getElementById('filter-disease').addEventListener('click', () => {
-      state.diseaseIdx = (state.diseaseIdx + 1) % DISEASE_OPTIONS.length;
+      const diseases = getDiseaseOptions();
+      state.diseaseIdx = (state.diseaseIdx + 1) % diseases.length;
       renderThreatsAndPins();
     });
     document.getElementById('filter-period').addEventListener('click', () => {
@@ -821,14 +1252,48 @@
 
     document.getElementById('btn-download').addEventListener('click', downloadReportCsv);
 
-    ['rep-filter-district', 'rep-filter-crop', 'rep-filter-severity'].forEach((id) => {
+    document.getElementById('rep-filter-district')?.addEventListener('change', (e) => {
+      fetchDistrictScansIfOnline(e.target.value);
+    });
+    ['rep-filter-crop', 'rep-filter-severity'].forEach((id) => {
       document.getElementById(id)?.addEventListener('change', renderReportsView);
     });
+
     document.getElementById('btn-sync-backend').addEventListener('click', syncBackendExplicit);
     document.getElementById('btn-check-health').addEventListener('click', checkApiHealth);
+
+    const inputApiBase = document.getElementById('input-api-base');
+    const btnSaveApi = document.getElementById('btn-save-api');
+    if (inputApiBase) {
+      inputApiBase.value = state.apiBase;
+    }
+    btnSaveApi?.addEventListener('click', async () => {
+      const raw = (inputApiBase?.value || '').trim().replace(/\/+$/, '');
+      const nextUrl = raw || 'http://localhost:8080';
+      state.apiBase = nextUrl;
+      try {
+        localStorage.setItem('eagles_eye_api_base', nextUrl);
+      } catch (_) {
+        // ignore
+      }
+      await checkApiHealth();
+      await fetchLiveScansFromBackend();
+    });
+
+    // Live background sync when extension officer keeps dashboard open
+    state.pollTimer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchLiveScansFromBackend();
+      }
+    }, 15000);
+
+    window.addEventListener('focus', () => {
+      fetchLiveScansFromBackend();
+    });
   }
 
   function init() {
+    updateHeaderClock();
     bindEvents();
     renderThreatsAndPins();
     loadInitialReports();
@@ -843,8 +1308,6 @@
       observer.observe(mapContainer);
     }
 
-    // If Google Maps already loaded before DOMContentLoaded, initialize right away;
-    // otherwise give Google Maps 3.5s before activating Leaflet real Uganda map fallback.
     if (window.google?.maps && !state.mapEngine) {
       initGoogleMapInstance();
     } else {

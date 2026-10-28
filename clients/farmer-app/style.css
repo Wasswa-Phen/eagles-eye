@@ -305,6 +305,52 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
 }
 .scan-instruction p { line-height: 1.35; margin: 0; font-size: clamp(14px, 3.9vw, 16px); }
 
+.scan-context {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px 0;
+  flex-shrink: 0;
+}
+.scan-context select {
+  height: 32px;
+  max-width: 47%;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid #ffffff38;
+  background: #152a1ccc;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.scan-context select option {
+  background: #1b1b1b;
+  color: #fff;
+}
+
+.scan-toast {
+  position: absolute;
+  z-index: 9;
+  left: 16px;
+  right: 16px;
+  bottom: calc(126px + env(safe-area-inset-bottom, 0px));
+  background: var(--red-soft);
+  color: var(--red);
+  border: 1px solid #efc1bd;
+  padding: 12px 15px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 10px 26px #0004;
+}
+
 .leaf-stage {
   flex: 1;
   min-height: 210px;
@@ -473,6 +519,10 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
   font-size: 11px;
   font-weight: 700;
 }
+.confidence.is-low {
+  color: #8f5b00;
+  background: var(--amber-soft);
+}
 .severity { padding: 17px 4px 15px; }
 .severity > div:first-child { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
 .severity strong { color: #a96700; }
@@ -496,6 +546,7 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--amber); ou
 .severity-track span.tone-high { width: 88%; background: var(--red); }
 .severity-track span.tone-healthy { width: 22%; background: var(--green); }
 .severity-track span.tone-low { width: 35%; background: var(--green); }
+.severity-track span.tone-inconclusive { width: 28%; background: var(--amber); }
 .severity small { color: var(--muted); }
 
 .section-heading {
